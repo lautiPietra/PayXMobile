@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">PayXMobile</string>
+
+    <!-- Web Client ID de Google Cloud (no es secreto, viaja al cliente de todas formas) -->
+    <string name="google_web_client_id" translatable="false">343739360282-1k277j9fbr1ent38lcd7t8qlsqgaf703.apps.googleusercontent.com</string>
+</resources>

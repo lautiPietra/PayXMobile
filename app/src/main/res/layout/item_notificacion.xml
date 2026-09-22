@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="16dp">
+
+    <!-- Ícono campana -->
+    <TextView
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:background="@drawable/bg_service_icon"
+        android:backgroundTint="#1AE85500"
+        android:gravity="center"
+        android:text="🔔"
+        android:textSize="18sp"
+        android:layout_marginEnd="14dp" />
+
+    <!-- Mensaje + fecha -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvMensajeNotif"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#DDDDDD"
+            android:textSize="13sp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvFechaNotif"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#555555"
+            android:textSize="11sp" />
+
+    </LinearLayout>
+
+    <!-- Punto no leída -->
+    <View
+        android:id="@+id/badgeNoLeida"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/bg_badge_notif"
+        android:layout_marginStart="10dp"
+        android:visibility="gone" />
+
+</LinearLayout>

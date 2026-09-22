@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="payx_orange">#E85500</color>
+    <color name="payx_background">#FF000000</color>
+    <color name="login_background">#111111</color>
+    <color name="input_dark_bg">#1E1E1E</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#888888</color>
+    <color name="text_hint">#666666</color>
+    <color name="input_stroke">#2A2A2A</color>
+
+    <color name="google_button_bg">#FFFFFF</color>
+    <color name="google_button_bg_pressed">#F1F3F4</color>
+    <color name="google_button_border">#DADCE0</color>
+    <color name="google_button_text">#3C4043</color>
+
+    <color name="card_bg">#1A1A1A</color>
+    <color name="card_border">#242424</color>
+    <color name="accion_icon_bg">#26E85500</color>
+    <color name="accion_icon_bg_pressed">#40E85500</color>
+    <color name="promo_gradient_start">#1A1A1A</color>
+    <color name="promo_gradient_end">#2D2D2D</color>
+</resources>
