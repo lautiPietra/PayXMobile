@@ -22,4 +22,48 @@
     <color name="accion_icon_bg_pressed">#40E85500</color>
     <color name="promo_gradient_start">#1A1A1A</color>
     <color name="promo_gradient_end">#2D2D2D</color>
+
+    <!-- Acentos por moneda del card de saldo -->
+    <color name="color_pesos">#E85500</color>
+    <color name="color_pesos_dark">#FF7A2E</color>
+    <color name="color_dolares">#12B886</color>
+    <color name="color_dolares_dark">#3FE0AE</color>
+    <color name="color_cripto">#8B5CF6</color>
+    <color name="color_cripto_dark">#B296FF</color>
+
+    <color name="dolares_icon_bg">#2612B886</color>
+    <color name="dolares_icon_bg_pressed">#4012B886</color>
+    <color name="cripto_icon_bg">#268B5CF6</color>
+    <color name="cripto_icon_bg_pressed">#408B5CF6</color>
+
+    <color name="chip_bg">#242424</color>
+    <color name="chip_text">#AAAAAA</color>
+
+    <color name="color_logout">#F14C4C</color>
+    <color name="color_logout_bg">#26F14C4C</color>
+    <color name="popup_bg">#1E1E1E</color>
+    <color name="popup_divider">#2E2E2E</color>
+
+    <!-- Colores por tipo de servicio -->
+    <color name="color_servicio_luz">#F2A93B</color>
+    <color name="color_servicio_gas">#FF6B35</color>
+    <color name="color_servicio_agua">#29A8E0</color>
+    <color name="color_servicio_internet">#8B5CF6</color>
+    <color name="color_servicio_tv">#EC4899</color>
+    <color name="color_servicio_telefonia">#22C55E</color>
+
+    <color name="color_pagada_bg">#1FB672</color>
+    <color name="color_pagada_bg_tint">#221FB672</color>
+
+    <color name="color_positivo">#12B886</color>
+    <color name="color_negativo">#F14C4C</color>
+
+    <!-- Colores para elegir en Cajas de Ahorro -->
+    <color name="caja_color_1">#E85500</color>
+    <color name="caja_color_2">#22C55E</color>
+    <color name="caja_color_3">#29A8E0</color>
+    <color name="caja_color_4">#8B5CF6</color>
+    <color name="caja_color_5">#EC4899</color>
+    <color name="caja_color_6">#6B7280</color>
+    <color name="caja_color_7">#EF4444</color>
 </resources>

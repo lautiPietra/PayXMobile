@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#131313"
+    android:overScrollMode="never">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="32dp">
+
+        <!-- ══ HEADER ══ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="48dp"
+            android:paddingBottom="20dp">
+
+            <LinearLayout
+                android:id="@+id/btnVolver"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_back"
+                    app:tint="@color/payx_orange" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="Volver"
+                    android:textColor="@color/payx_orange"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <ImageView
+                android:id="@+id/btnCerrar"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_action_button"
+                android:src="@drawable/ic_close"
+                android:padding="9dp" />
+        </LinearLayout>
+
+        <!-- ══ TÍTULO ══ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:gravity="center"
+            android:paddingHorizontal="24dp"
+            android:text="Nueva caja de ahorro"
+            android:textColor="@color/text_primary"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:gravity="center"
+            android:paddingHorizontal="30dp"
+            android:lineSpacingExtra="2dp"
+            android:text="Separá plata de tu saldo principal para un objetivo puntual"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <!-- ══ PREVIEW ══ -->
+        <LinearLayout
+            android:id="@+id/previewCaja"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/bg_preview_caja"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="18dp">
+
+            <ImageView
+                android:id="@+id/ivPreviewIcono"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginEnd="12dp"
+                android:src="@drawable/ic_piggy_bank"
+                app:tint="@color/white" />
+
+            <TextView
+                android:id="@+id/tvPreviewNombre"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nombre de la caja"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- ══ NOMBRE ══ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="8dp"
+            android:text="Nombre"
+            android:textColor="@color/text_primary"
+            android:textSize="13.5sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etNombreCaja"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="18dp"
+            android:background="@drawable/bg_input_dark"
+            android:hint="Ej: Viaje a Bariloche"
+            android:inputType="text"
+            android:padding="14dp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
+            android:textSize="14sp" />
+
+        <!-- ══ META ══ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="8dp"
+            android:text="Meta (opcional)"
+            android:textColor="@color/text_primary"
+            android:textSize="13.5sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etMetaCaja"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/bg_input_dark"
+            android:hint="$ Sin meta definida"
+            android:inputType="numberDecimal"
+            android:padding="14dp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
+            android:textSize="14sp" />
+
+        <!-- ══ COLOR ══ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="10dp"
+            android:text="Color"
+            android:textColor="@color/text_primary"
+            android:textSize="13.5sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="24dp"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/colorSwatch0"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1">
+
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_icon_circle_solid"
+                    android:backgroundTint="@color/caja_color_1" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/colorSwatch1"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1">
+
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_icon_circle_solid"
+                    android:backgroundTint="@color/caja_color_2" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/colorSwatch2"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1">
+
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_icon_circle_solid"
+                    android:backgroundTint="@color/caja_color_3" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/colorSwatch3"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1">
+
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_icon_circle_solid"
+                    android:backgroundTint="@color/caja_color_4" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/colorSwatch4"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1">
+
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_icon_circle_solid"
+                    android:backgroundTint="@color/caja_color_5" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/colorSwatch5"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1">
+
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_icon_circle_solid"
+                    android:backgroundTint="@color/caja_color_6" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/colorSwatch6"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1">
+
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_icon_circle_solid"
+                    android:backgroundTint="@color/caja_color_7" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- ══ ICONO ══ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="10dp"
+            android:text="Icono"
+            android:textColor="@color/text_primary"
+            android:textSize="13.5sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="10dp"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion0"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_piggy_bank"
+                    app:tint="@color/payx_orange" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion1"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_target"
+                    app:tint="@color/text_secondary" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion2"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_shield"
+                    app:tint="@color/text_secondary" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion3"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_plane"
+                    app:tint="@color/text_secondary" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="10dp"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion4"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_briefcase"
+                    app:tint="@color/text_secondary" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion5"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_book"
+                    app:tint="@color/text_secondary" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion6"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_heart"
+                    app:tint="@color/text_secondary" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion7"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_gift"
+                    app:tint="@color/text_secondary" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="26dp"
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion8"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_bag"
+                    app:tint="@color/text_secondary" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion9"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_home"
+                    app:tint="@color/text_secondary" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion10"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_wallet"
+                    app:tint="@color/text_secondary" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/iconoOpcion11"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_icono_caja"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_trending_up"
+                    app:tint="@color/text_secondary" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- ══ BOTONES ══ -->
+        <Button
+            android:id="@+id/btnCrearCaja"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/bg_button_orange"
+            app:backgroundTint="@null"
+            android:text="Crear caja"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnCancelar"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginHorizontal="20dp"
+            android:background="@drawable/bg_button_outline"
+            app:backgroundTint="@null"
+            android:text="Cancelar"
+            android:textAllCaps="false"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

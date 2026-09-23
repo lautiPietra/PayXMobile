@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/overlayMenu"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:elevation="32dp"
+    android:visibility="gone">
+
+    <View
+        android:id="@+id/scrimMenu"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#B3000000"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <LinearLayout
+        android:id="@+id/panelMenu"
+        android:layout_width="300dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:background="@drawable/bg_panel_menu"
+        android:elevation="24dp"
+        android:orientation="vertical">
+
+        <!-- Encabezado -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="50dp"
+            android:paddingBottom="18dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Menú"
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvMenuSaludo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Hola"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/btnCerrarMenu"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="@drawable/bg_action_button"
+                android:padding="8dp"
+                android:src="@drawable/ic_close" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginBottom="8dp"
+            android:background="@color/card_border" />
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:overScrollMode="never">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingVertical="8dp">
+
+                <LinearLayout android:id="@+id/itemPerfil" style="@style/MenuLateralItem">
+                    <ImageView
+                        style="@style/MenuLateralIconWrap"
+                        android:background="@drawable/bg_menu_icon_neutral"
+                        android:src="@drawable/ic_nav_perfil"
+                        app:tint="@color/payx_orange" />
+                    <TextView style="@style/MenuLateralLabel" android:text="Ver perfil" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/itemMovimientos" style="@style/MenuLateralItem">
+                    <ImageView
+                        style="@style/MenuLateralIconWrap"
+                        android:background="@drawable/bg_menu_icon_neutral"
+                        android:src="@drawable/ic_nav_actividad"
+                        app:tint="@color/payx_orange" />
+                    <TextView style="@style/MenuLateralLabel" android:text="Movimientos" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/itemPlazoFijo" style="@style/MenuLateralItem">
+                    <ImageView
+                        style="@style/MenuLateralIconWrap"
+                        android:background="@drawable/bg_menu_icon_neutral"
+                        android:src="@drawable/ic_piggy_bank"
+                        app:tint="@color/payx_orange" />
+                    <TextView style="@style/MenuLateralLabel" android:text="Plazos fijos" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/itemCajaAhorro" style="@style/MenuLateralItem">
+                    <ImageView
+                        style="@style/MenuLateralIconWrap"
+                        android:background="@drawable/bg_menu_icon_neutral"
+                        android:src="@drawable/ic_target"
+                        app:tint="@color/payx_orange" />
+                    <TextView style="@style/MenuLateralLabel" android:text="Cajas de ahorro" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/itemTarjeta" style="@style/MenuLateralItem">
+                    <ImageView
+                        style="@style/MenuLateralIconWrap"
+                        android:background="@drawable/bg_menu_icon_neutral"
+                        android:src="@drawable/ic_credit_card"
+                        app:tint="@color/payx_orange" />
+                    <TextView style="@style/MenuLateralLabel" android:text="Tarjeta virtual" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/itemServicios" style="@style/MenuLateralItem">
+                    <ImageView
+                        style="@style/MenuLateralIconWrap"
+                        android:background="@drawable/bg_menu_icon_neutral"
+                        android:src="@drawable/ic_zap"
+                        app:tint="@color/payx_orange" />
+                    <TextView style="@style/MenuLateralLabel" android:text="Pagar servicios" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/itemEstadisticas" style="@style/MenuLateralItem">
+                    <ImageView
+                        style="@style/MenuLateralIconWrap"
+                        android:background="@drawable/bg_menu_icon_neutral"
+                        android:src="@drawable/ic_bar_chart"
+                        app:tint="@color/payx_orange" />
+                    <TextView style="@style/MenuLateralLabel" android:text="Estadísticas" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:background="@color/card_border" />
+
+        <LinearLayout
+            android:id="@+id/itemCerrarSesion"
+            style="@style/MenuLateralItem"
+            android:layout_marginBottom="20dp">
+
+            <ImageView
+                style="@style/MenuLateralIconWrap"
+                android:background="@drawable/bg_menu_icon_logout"
+                android:src="@drawable/ic_logout"
+                app:tint="@color/color_logout" />
+
+            <TextView
+                style="@style/MenuLateralLabel"
+                android:text="Cerrar sesión"
+                android:textColor="@color/color_logout" />
+        </LinearLayout>
+
+    </LinearLayout>
+</FrameLayout>

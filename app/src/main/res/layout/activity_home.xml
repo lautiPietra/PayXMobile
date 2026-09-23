@@ -55,7 +55,8 @@
 
                 <FrameLayout
                     android:layout_width="38dp"
-                    android:layout_height="38dp">
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="10dp">
 
                     <ImageView
                         android:id="@+id/btnNotificaciones"
@@ -75,6 +76,14 @@
                         android:background="@drawable/bg_badge_notif"
                         android:visibility="gone" />
                 </FrameLayout>
+
+                <ImageView
+                    android:id="@+id/btnMenu"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_action_button"
+                    android:src="@drawable/ic_menu"
+                    android:padding="8dp" />
             </LinearLayout>
 
             <!-- ══════ Card de saldo ══════ -->
@@ -90,24 +99,25 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="24dp">
+                    android:orientation="vertical">
 
                     <!-- Tabs de moneda -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
                         android:layout_marginBottom="16dp"
+                        android:paddingHorizontal="24dp"
                         android:orientation="horizontal">
 
                         <TextView
                             android:id="@+id/tabPesos"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginEnd="24dp"
+                            android:layout_marginEnd="22dp"
                             android:paddingVertical="6dp"
                             android:text="Pesos"
-                            android:textColor="@color/payx_orange"
+                            android:textColor="@color/color_pesos"
                             android:textSize="14sp"
                             android:textStyle="bold" />
 
@@ -115,8 +125,18 @@
                             android:id="@+id/tabDolares"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginEnd="22dp"
                             android:paddingVertical="6dp"
                             android:text="Dólares"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tabCripto"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingVertical="6dp"
+                            android:text="Cripto"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -124,199 +144,44 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:layout_marginBottom="18dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_marginHorizontal="24dp"
                         android:background="@color/card_border" />
 
-                    <TextView
+                    <androidx.viewpager2.widget.ViewPager2
+                        android:id="@+id/vpSaldo"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="6dp"
-                        android:text="Disponible en tu cuenta"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:layout_marginBottom="8dp" />
 
-                    <!-- Monto -->
+                    <!-- Indicador de página -->
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="20dp">
-
-                        <TextView
-                            android:id="@+id/tvSaldoSimbolo"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="6dp"
-                            android:layout_marginBottom="3dp"
-                            android:layout_gravity="bottom"
-                            android:text="$"
-                            android:textColor="@color/text_primary"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/tvSaldoNumero"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="0,00"
-                            android:textColor="@color/text_primary"
-                            android:textSize="34sp"
-                            android:textStyle="bold" />
-
-                        <ImageButton
-                            android:id="@+id/btnToggleSaldo"
-                            android:layout_width="34dp"
-                            android:layout_height="34dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_eye"
-                            app:tint="@color/text_secondary" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
+                        android:layout_gravity="center_horizontal"
                         android:layout_marginBottom="18dp"
-                        android:background="@color/card_border" />
-
-                    <!-- Botones principales -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
                         android:orientation="horizontal">
 
-                        <Button
-                            android:id="@+id/btnTransferir"
-                            android:layout_width="wrap_content"
-                            android:layout_height="44dp"
-                            android:layout_marginEnd="10dp"
-                            android:background="@drawable/bg_button_orange"
-                            android:drawableStart="@drawable/ic_send"
-                            android:drawablePadding="8dp"
-                            android:drawableTint="@color/white"
-                            android:gravity="center"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
-                            android:text="Transferir"
-                            android:textAllCaps="false"
-                            android:textColor="@color/white"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
+                        <View
+                            android:id="@+id/dot0"
+                            android:layout_width="18dp"
+                            android:layout_height="4dp"
+                            android:layout_marginHorizontal="3dp"
+                            android:background="@drawable/bg_dot_activo" />
 
-                        <Button
-                            android:id="@+id/btnVerMovimientos"
-                            android:layout_width="0dp"
-                            android:layout_height="44dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/bg_button_orange_tint"
-                            android:gravity="center"
-                            android:maxLines="1"
-                            android:paddingStart="8dp"
-                            android:paddingEnd="8dp"
-                            android:text="Ver movimientos"
-                            android:textAllCaps="false"
-                            android:textColor="@color/payx_orange"
-                            android:textSize="12.5sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+                        <View
+                            android:id="@+id/dot1"
+                            android:layout_width="6dp"
+                            android:layout_height="4dp"
+                            android:layout_marginHorizontal="3dp"
+                            android:background="@drawable/bg_dot_inactivo" />
 
-                    <!-- Detalle de cuenta: alias y CVU -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="20dp"
-                        android:layout_marginBottom="4dp"
-                        android:background="@color/card_border" />
-
-                    <LinearLayout
-                        android:id="@+id/filaAlias"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackground"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingVertical="10dp">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Alias"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11sp" />
-
-                            <TextView
-                                android:id="@+id/tvAliasValor"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="-"
-                                android:textColor="@color/text_primary"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Copiar"
-                            android:textColor="@color/payx_orange"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/card_border" />
-
-                    <LinearLayout
-                        android:id="@+id/filaCvu"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackground"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingVertical="10dp">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="CVU"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11sp" />
-
-                            <TextView
-                                android:id="@+id/tvCvuValor"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="-"
-                                android:textColor="@color/text_primary"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Copiar"
-                            android:textColor="@color/payx_orange"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+                        <View
+                            android:id="@+id/dot2"
+                            android:layout_width="6dp"
+                            android:layout_height="4dp"
+                            android:layout_marginHorizontal="3dp"
+                            android:background="@drawable/bg_dot_inactivo" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -362,6 +227,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="42dp"
                     android:background="@drawable/bg_button_white"
+                    app:backgroundTint="@null"
                     android:gravity="center"
                     android:paddingStart="18dp"
                     android:paddingEnd="18dp"
@@ -514,6 +380,14 @@
         app:itemIconTint="@color/bottom_nav_color"
         app:itemTextColor="@color/bottom_nav_color"
         app:menu="@menu/bottom_nav_menu"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- MENÚ LATERAL -->
+    <include
+        layout="@layout/overlay_menu_home"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
