@@ -11,13 +11,14 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.payxmobile.R;
-import com.example.payxmobile.model.ErrorResponse;
 import com.example.payxmobile.model.MensajeResponse;
 import com.example.payxmobile.model.ReenviarCodigoRequest;
 import com.example.payxmobile.model.VerificarCodigoRequest;
+import com.example.payxmobile.network.ApiErrores;
 import com.example.payxmobile.network.RetrofitClient;
+import com.example.payxmobile.utils.EsperaReenvio;
+import com.example.payxmobile.utils.Validadores;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.gson.Gson;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -29,6 +30,8 @@ public class VerificarEmailActivity extends AppCompatActivity {
     private Button btnVerificar;
     private ProgressBar progressBar;
     private String email;
+    private boolean enCurso = false;
+    private EsperaReenvio esperaReenvio;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,16 +53,28 @@ public class VerificarEmailActivity extends AppCompatActivity {
 
         btnVerificar.setOnClickListener(v -> verificar());
 
-        findViewById(R.id.tvReenviar).setOnClickListener(v -> reenviarCodigo());
+        // Tras tocar "Reenviar" queda bloqueado 1 minuto (evita mandar un mail por cada toque)
+        TextView tvReenviar = findViewById(R.id.tvReenviar);
+        esperaReenvio = new EsperaReenvio(this, EsperaReenvio.TIPO_VERIFICACION, email, tvReenviar);
+        esperaReenvio.reanudar();
+        tvReenviar.setOnClickListener(v -> reenviarCodigo());
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (esperaReenvio != null) esperaReenvio.detener();
     }
 
     private void verificar() {
         String codigo = etCodigo.getText() != null ? etCodigo.getText().toString().trim() : "";
 
-        if (codigo.length() != 6) {
-            Toast.makeText(this, "Ingresá el código de 6 dígitos", Toast.LENGTH_SHORT).show();
+        String errorCodigo = Validadores.codigo(codigo);
+        if (errorCodigo != null) {
+            Toast.makeText(this, errorCodigo, Toast.LENGTH_SHORT).show();
             return;
         }
+        if (enCurso) return;
 
         setLoading(true);
 
@@ -86,12 +101,14 @@ public class VerificarEmailActivity extends AppCompatActivity {
                     public void onFailure(Call<MensajeResponse> call, Throwable t) {
                         setLoading(false);
                         Toast.makeText(VerificarEmailActivity.this,
-                                "Sin conexión con el servidor", Toast.LENGTH_LONG).show();
+                                ApiErrores.mensajeFallo(t), Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     private void reenviarCodigo() {
+        if (!esperaReenvio.puedeReenviar()) return;
+        esperaReenvio.iniciar();
         RetrofitClient.getService(this)
                 .reenviarCodigo(new ReenviarCodigoRequest(email))
                 .enqueue(new Callback<MensajeResponse>() {
@@ -108,24 +125,19 @@ public class VerificarEmailActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call<MensajeResponse> call, Throwable t) {
                         Toast.makeText(VerificarEmailActivity.this,
-                                "Sin conexión con el servidor", Toast.LENGTH_LONG).show();
+                                ApiErrores.mensajeFallo(t), Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     private void setLoading(boolean loading) {
+        enCurso = loading;
         btnVerificar.setEnabled(!loading);
         btnVerificar.setText(loading ? "Verificando..." : "Verificar cuenta");
         progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
     private void mostrarError(Response<?> response) {
-        try {
-            ErrorResponse error = new Gson().fromJson(
-                    response.errorBody().charStream(), ErrorResponse.class);
-            Toast.makeText(this, error.getError(), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "Error al verificar", Toast.LENGTH_SHORT).show();
-        }
+        Toast.makeText(this, ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
     }
 }

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cartel rojo de error (formulario, confirmación y detalle de transferencias) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/color_logout_bg" />
+    <stroke android:width="1dp" android:color="#66F14C4C" />
+    <corners android:radius="12dp" />
+</shape>

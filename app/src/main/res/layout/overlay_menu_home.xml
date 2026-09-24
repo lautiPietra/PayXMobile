@@ -35,6 +35,31 @@
             android:paddingTop="50dp"
             android:paddingBottom="18dp">
 
+            <!-- Avatar del usuario (foto o inicial), igual que el de Perfil -->
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="12dp">
+
+                <TextView
+                    android:id="@+id/tvMenuInicial"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_avatar_gradiente"
+                    android:gravity="center"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/ivMenuFoto"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="Foto de perfil"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
+            </FrameLayout>
+
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -103,6 +128,15 @@
                         android:src="@drawable/ic_nav_actividad"
                         app:tint="@color/payx_orange" />
                     <TextView style="@style/MenuLateralLabel" android:text="Movimientos" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/itemMisTransferencias" style="@style/MenuLateralItem">
+                    <ImageView
+                        style="@style/MenuLateralIconWrap"
+                        android:background="@drawable/bg_menu_icon_neutral"
+                        android:src="@drawable/ic_send"
+                        app:tint="@color/payx_orange" />
+                    <TextView style="@style/MenuLateralLabel" android:text="Mis transferencias" />
                 </LinearLayout>
 
                 <LinearLayout android:id="@+id/itemPlazoFijo" style="@style/MenuLateralItem">

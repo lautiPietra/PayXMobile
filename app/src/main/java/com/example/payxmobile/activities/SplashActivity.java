@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.payxmobile.R;
+import com.example.payxmobile.utils.SesionUtils;
 import com.example.payxmobile.utils.SessionManager;
 
 public class SplashActivity extends AppCompatActivity {
@@ -57,8 +58,20 @@ public class SplashActivity extends AppCompatActivity {
                 .alpha(0f)
                 .setDuration(400)
                 .withEndAction(() -> {
-                    new SessionManager(SplashActivity.this).clearSession();
-                    startActivity(new Intent(SplashActivity.this, LoginActivity.class));
+                    // Con token vigente se entra directo; vencido (según su "exp", sin llamar al
+                    // backend) se limpia la sesión y se avisa en el Login.
+                    SessionManager session = new SessionManager(SplashActivity.this);
+                    Intent destino;
+                    if (session.tieneSesionVigente()) {
+                        destino = new Intent(SplashActivity.this, HomeActivity.class);
+                    } else {
+                        destino = new Intent(SplashActivity.this, LoginActivity.class);
+                        if (session.getToken() != null) {
+                            destino.putExtra(SesionUtils.EXTRA_MENSAJE, SesionUtils.MSG_SESION_VENCIDA);
+                        }
+                        session.clearSession();
+                    }
+                    startActivity(destino);
                     finish();
                     overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 })

@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Detalle de una transferencia (como TransferenciaDetalleModal de la web) -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_bottom_sheet">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingHorizontal="22dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="28dp">
+
+        <TextView
+            android:id="@+id/tvMontoDetalle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvTituloDetalle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/tvBadgeEstado"
+            style="@style/TransferBadgePendiente"
+            android:layout_marginTop="10dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_input_dark"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="14dp">
+
+            <LinearLayout style="@style/TransferFilaDato">
+                <TextView android:id="@+id/tvEtiquetaContraparte" style="@style/TransferFilaEtiqueta" />
+                <TextView android:id="@+id/tvContraparte" style="@style/TransferFilaValor" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/TransferFilaDato">
+                <TextView style="@style/TransferFilaEtiqueta" android:text="Fecha" />
+                <TextView android:id="@+id/tvFechaDetalle" style="@style/TransferFilaValor" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/filaConfirmada" style="@style/TransferFilaDato">
+                <TextView style="@style/TransferFilaEtiqueta" android:text="Confirmada" />
+                <TextView android:id="@+id/tvFechaConfirmacion" style="@style/TransferFilaValor" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Concepto (solo el emisor puede cambiarlo) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Concepto"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/btnCambiarConcepto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:padding="6dp"
+                android:text="Cambiar"
+                android:textColor="@color/payx_orange"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvConcepto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:id="@+id/layoutEditarConcepto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <EditText
+                android:id="@+id/etConcepto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_input_dark"
+                android:hint="Sin concepto"
+                android:importantForAutofill="no"
+                android:inputType="textCapSentences"
+                android:maxLength="200"
+                android:padding="12dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_hint"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="end"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCancelarConcepto"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancelar"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_secondary" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnGuardarConcepto"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Guardar"
+                    android:textAllCaps="false"
+                    android:textColor="@color/payx_orange" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvErrorDetalle"
+            style="@style/TransferError"
+            android:layout_marginHorizontal="0dp"
+            android:layout_marginTop="14dp"
+            android:visibility="gone" />
+
+        <!-- Pendiente enviada por mí: confirmar o cancelar -->
+        <LinearLayout
+            android:id="@+id/layoutPendiente"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvAvisoPendienteDetalle"
+                style="@style/TransferAvisoPendiente" />
+
+            <Button
+                android:id="@+id/btnConfirmarPendiente"
+                style="@style/TransferBotonPrincipal"
+                android:layout_marginHorizontal="0dp"
+                android:layout_marginTop="14dp"
+                android:text="Confirmar ahora" />
+
+            <Button
+                android:id="@+id/btnCancelarPendiente"
+                style="@style/TransferBotonSecundario"
+                android:layout_marginHorizontal="0dp"
+                android:text="Cancelar transferencia" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

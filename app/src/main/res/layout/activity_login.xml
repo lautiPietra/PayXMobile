@@ -131,6 +131,19 @@
             android:textStyle="bold"
             app:backgroundTint="@null" />
 
+        <!-- Solo aparece cuando el backend responde "Debes verificar tu email..." -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVerificarEmail"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-16dp"
+            android:layout_marginBottom="16dp"
+            android:text="Verificar mi email ahora"
+            android:textAllCaps="false"
+            android:textColor="#FF6B1A"
+            android:visibility="gone" />
+
         <!-- Separador "o continuá con" -->
         <LinearLayout
             android:layout_width="match_parent"

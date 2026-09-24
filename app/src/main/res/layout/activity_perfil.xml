@@ -59,18 +59,53 @@
                         android:layout_height="36dp" />
                 </LinearLayout>
 
-                <!-- Avatar grande con inicial -->
-                <TextView
-                    android:id="@+id/tvInicialHeader"
-                    android:layout_width="76dp"
-                    android:layout_height="76dp"
+                <!-- Avatar: foto en círculo o inicial sobre degradé + botón de edición -->
+                <FrameLayout
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
                     android:layout_gravity="center_horizontal"
-                    android:background="@drawable/bg_orange_oval"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="30sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:id="@+id/tvInicialHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_avatar_gradiente"
+                        android:gravity="center"
+                        android:textColor="#FFFFFF"
+                        android:textSize="34sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/ivFotoPerfil"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="Foto de perfil"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tvSubiendoFoto"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_avatar_subiendo"
+                        android:gravity="center"
+                        android:text="Subiendo..."
+                        android:textColor="#FFFFFF"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                    <ImageButton
+                        android:id="@+id/btnEditarFoto"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="bottom|end"
+                        android:background="@drawable/bg_avatar_editar"
+                        android:contentDescription="Cambiar foto de perfil"
+                        android:padding="7dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_edit" />
+                </FrameLayout>
 
                 <TextView
                     android:id="@+id/tvNombreHeader"
@@ -90,6 +125,68 @@
                     android:textColor="#888888"
                     android:textSize="13sp" />
             </LinearLayout>
+
+            <!-- Estado de carga / error del GET /api/perfil -->
+            <LinearLayout
+                android:id="@+id/layoutEstadoPerfil"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ProgressBar
+                    android:id="@+id/progressPerfil"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginEnd="10dp"
+                    android:indeterminateTint="#FF6B1A" />
+
+                <TextView
+                    android:id="@+id/tvEstadoPerfil"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="#BBBBBB"
+                    android:textSize="13sp" />
+
+                <Button
+                    android:id="@+id/btnReintentarPerfil"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Reintentar"
+                    android:textAllCaps="false"
+                    android:textColor="#FF6B1A"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <!-- Error de la foto de perfil -->
+            <TextView
+                android:id="@+id/tvErrorFoto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:textColor="#FF6B6B"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <!-- Aviso: faltan DNI y/o teléfono (cuentas creadas con Google) -->
+            <TextView
+                android:id="@+id/tvAvisoDatosPendientes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_pill_orange_tint"
+                android:padding="14dp"
+                android:textColor="#FFB38A"
+                android:textSize="13sp"
+                android:visibility="gone" />
 
             <!-- ══ DATOS NO EDITABLES ══ -->
             <LinearLayout
@@ -243,6 +340,39 @@
                     android:textSize="14sp"
                     android:textStyle="bold" />
             </LinearLayout>
+
+            <!-- DNI: solo si la cuenta no lo tiene (se puede cargar una sola vez) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilDni"
+                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="12dp"
+                android:hint="DNI (solo se puede cargar una vez)"
+                android:visibility="gone"
+                app:boxBackgroundColor="#1E1E1E"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxStrokeColor="#E85500"
+                app:boxStrokeWidth="0dp"
+                app:boxStrokeWidthFocused="2dp"
+                app:hintTextColor="#666666"
+                app:startIconDrawable="@android:drawable/ic_menu_info_details"
+                app:startIconTint="#666666">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etDni"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:digits="0123456789"
+                    android:inputType="number"
+                    android:maxLength="10"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#666666"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Nombre de usuario -->
             <com.google.android.material.textfield.TextInputLayout

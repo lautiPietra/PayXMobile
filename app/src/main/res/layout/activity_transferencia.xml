@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Transferencia en pesos, dólares o cripto: FORMULARIO -> CONFIRMAR -> ÉXITO (como TransferModal de la web) -->
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scrollTransferencia"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#131313"
@@ -17,8 +19,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
             android:gravity="center_vertical"
+            android:orientation="horizontal"
             android:paddingHorizontal="20dp"
             android:paddingTop="48dp"
             android:paddingBottom="20dp">
@@ -27,11 +29,11 @@
                 android:id="@+id/btnVolver"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
+                android:background="?attr/selectableItemBackground"
                 android:clickable="true"
                 android:focusable="true"
-                android:background="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:padding="6dp">
 
                 <ImageView
@@ -60,423 +62,586 @@
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:background="@drawable/bg_action_button"
-                android:src="@drawable/ic_close"
-                android:padding="9dp" />
+                android:contentDescription="Cerrar"
+                android:padding="9dp"
+                android:src="@drawable/ic_close" />
         </LinearLayout>
 
-        <!-- ══ TÍTULO ══ -->
-        <TextView
-            android:id="@+id/tvTitulo"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="6dp"
-            android:gravity="center"
-            android:paddingHorizontal="24dp"
-            android:text="Transferir dinero"
-            android:textColor="@color/text_primary"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="26dp"
-            android:gravity="center"
-            android:paddingHorizontal="24dp"
-            android:text="Completá los datos de la transferencia"
-            android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
-
-        <!-- ══ RESUMEN ══ -->
+        <!-- ═════════════════════ PASO 1: FORMULARIO ═════════════════════ -->
         <LinearLayout
+            android:id="@+id/seccionFormulario"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="16dp"
-            android:background="@drawable/bg_input_dark"
-            android:orientation="vertical"
-            android:padding="20dp">
+            android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:text="Vas a transferir"
-                android:textColor="@color/payx_orange"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:id="@+id/tvTitulo"
+                style="@style/TransferTitulo"
+                android:text="Transferir dinero" />
 
+            <TextView
+                style="@style/TransferSubtitulo"
+                android:text="Completá los datos de la transferencia" />
+
+            <!-- Selector de cripto (solo en "Transferencia en cripto") -->
+            <LinearLayout
+                android:id="@+id/filaCriptos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    style="@style/TransferEtiqueta"
+                    android:text="Criptomoneda" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="18dp"
+                    android:paddingHorizontal="20dp"
+                    android:clipToPadding="false"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/layoutCriptos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
+            </LinearLayout>
+
+            <!-- Resumen -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="bottom"
-                android:orientation="horizontal">
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_input_dark"
+                android:orientation="vertical"
+                android:padding="20dp">
 
                 <TextView
-                    android:id="@+id/tvSimboloResumen"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="3dp"
-                    android:layout_marginEnd="4dp"
-                    android:text="$"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
+                    android:layout_marginBottom="8dp"
+                    android:text="Vas a transferir"
+                    android:textColor="@color/payx_orange"
+                    android:textSize="12sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvMontoResumen"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0,00"
                     android:textColor="@color/text_primary"
-                    android:textSize="30sp"
+                    android:textSize="28sp"
                     android:textStyle="bold" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="16dp"
-                android:background="@color/card_border" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal">
 
                 <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Saldo actual"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12.5sp" />
-
-                <TextView
-                    android:id="@+id/tvSaldoActual"
+                    android:id="@+id/tvDestinoResumen"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="$ 97.567.742,00"
+                    android:layout_marginTop="4dp"
                     android:textColor="@color/text_secondary"
-                    android:textSize="12.5sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                    android:textSize="13sp"
+                    android:visibility="gone" />
 
                 <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Saldo luego de transferir"
-                    android:textColor="@color/text_primary"
-                    android:textSize="12.5sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvSaldoLuego"
+                    android:id="@+id/tvMotivoResumen"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="$ 97.567.742,00"
-                    android:textColor="@color/text_primary"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/text_secondary"
                     android:textSize="12.5sp"
-                    android:textStyle="bold" />
+                    android:visibility="gone" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="16dp"
+                    android:background="@color/card_border" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Saldo actual"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12.5sp" />
+
+                    <TextView
+                        android:id="@+id/tvSaldoActual"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12.5sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Saldo luego de transferir"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvSaldoLuego"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvAvisoPendienteResumen"
+                    style="@style/TransferAvisoPendiente"
+                    android:layout_marginTop="14dp"
+                    android:text="No se descuenta nada hasta que confirmes la transferencia. Si pasan 24 horas sin confirmarla, se cancela automáticamente"
+                    android:visibility="gone" />
             </LinearLayout>
-        </LinearLayout>
 
-        <!-- ══ SALDO DISPONIBLE ══ -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="26dp"
-            android:background="@drawable/bg_saldo_disponible"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="14dp">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:layout_marginEnd="10dp"
-                android:src="@drawable/ic_credit_card"
-                app:tint="@color/payx_orange" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Saldo disponible"
-                android:textColor="@color/payx_orange"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvSaldoDisponible"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="$ 97.567.742,00"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- ══ DESTINATARIO ══ -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="8dp"
-            android:text="¿A quién le transferís?"
-            android:textColor="@color/text_primary"
-            android:textSize="13.5sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etDestinatario"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="18dp"
-            android:background="@drawable/bg_input_dark"
-            android:hint="CVU, alias o @usuario"
-            android:inputType="text"
-            android:padding="14dp"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_hint"
-            android:textSize="14sp" />
-
-        <!-- ══ MONTO ══ -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="8dp"
-            android:text="Monto a transferir"
-            android:textColor="@color/text_primary"
-            android:textSize="13.5sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="18dp"
-            android:background="@drawable/bg_input_dark"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="14dp">
-
-            <TextView
-                android:id="@+id/tvSimboloInput"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"
-                android:text="$"
-                android:textColor="@color/text_secondary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/etMonto"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@android:color/transparent"
-                android:hint="0,00"
-                android:inputType="numberDecimal"
-                android:paddingVertical="14dp"
-                android:textColor="@color/text_primary"
-                android:textColorHint="@color/text_hint"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/btnUsarTodo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="?attr/selectableItemBackground"
-                android:padding="8dp"
-                android:text="Usar todo"
-                android:textColor="@color/payx_orange"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- ══ MOTIVO ══ -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="8dp"
-            android:text="Motivo (opcional)"
-            android:textColor="@color/text_primary"
-            android:textSize="13.5sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:id="@+id/filaMotivo"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="26dp"
-            android:background="@drawable/bg_input_dark"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?attr/selectableItemBackground"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="14dp">
-
-            <TextView
-                android:id="@+id/tvMotivo"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Seleccioná un motivo"
-                android:textColor="@color/text_hint"
-                android:textSize="14sp" />
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:rotation="90"
-                android:src="@drawable/ic_chevron_right"
-                app:tint="@color/text_secondary" />
-        </LinearLayout>
-
-        <!-- ══ MÉTODO DE ENVÍO ══ -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="10dp"
-            android:text="¿Cómo querés enviarla?"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:id="@+id/opcionAhora"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="10dp"
-            android:background="@drawable/bg_opcion_envio_selected"
-            android:clickable="true"
-            android:focusable="true"
-            android:orientation="vertical"
-            android:padding="14dp">
-
+            <!-- Saldo disponible -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="26dp"
+                android:background="@drawable/bg_saldo_disponible"
                 android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:padding="14dp">
 
                 <ImageView
-                    android:id="@+id/ivIconoAhora"
                     android:layout_width="18dp"
                     android:layout_height="18dp"
-                    android:layout_marginEnd="8dp"
-                    android:src="@drawable/ic_send"
+                    android:layout_marginEnd="10dp"
+                    android:src="@drawable/ic_credit_card"
                     app:tint="@color/payx_orange" />
 
                 <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Saldo disponible"
+                    android:textColor="@color/payx_orange"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSaldoDisponible"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Transferir ahora"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <!-- Destinatario + contactos frecuentes -->
             <TextView
+                style="@style/TransferEtiqueta"
+                android:text="¿A quién le transferís?" />
+
+            <EditText
+                android:id="@+id/etDestinatario"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="26dp"
-                android:text="Se envía al instante y no se puede deshacer"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
-        </LinearLayout>
+                android:layout_marginHorizontal="20dp"
+                android:background="@drawable/bg_input_dark"
+                android:hint="CVU, alias o @usuario"
+                android:importantForAutofill="no"
+                android:inputType="textNoSuggestions"
+                android:maxLength="60"
+                android:padding="14dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_hint"
+                android:textSize="14sp" />
 
-        <LinearLayout
-            android:id="@+id/opcionPendiente"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="26dp"
-            android:background="@drawable/bg_opcion_envio_normal"
-            android:clickable="true"
-            android:focusable="true"
-            android:orientation="vertical"
-            android:padding="14dp">
+            <LinearLayout
+                android:id="@+id/layoutSugerencias"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_input_dark"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="18dp" />
+
+            <!-- Monto -->
+            <TextView
+                style="@style/TransferEtiqueta"
+                android:text="Monto a transferir" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
+                android:layout_marginHorizontal="20dp"
+                android:background="@drawable/bg_input_dark"
                 android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:id="@+id/ivIconoPendiente"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_marginEnd="8dp"
-                    android:src="@drawable/ic_clock"
-                    app:tint="@color/text_secondary" />
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp">
 
                 <TextView
+                    android:id="@+id/tvSimboloInput"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Dejar pendiente"
+                    android:layout_marginEnd="6dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etMonto"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:digits="0123456789,."
+                    android:hint="0,00"
+                    android:importantForAutofill="no"
+                    android:inputType="numberDecimal"
+                    android:paddingVertical="14dp"
                     android:textColor="@color/text_primary"
-                    android:textSize="14sp"
+                    android:textColorHint="@color/text_hint"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnUsarTodo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:padding="8dp"
+                    android:text="Usar todo"
+                    android:textColor="@color/payx_orange"
+                    android:textSize="13sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
             <TextView
+                android:id="@+id/tvEquivalenteUsd"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="26dp"
-                android:lineSpacingExtra="2dp"
-                android:text="No se mueve la plata hasta que vos la confirmes. Podés cancelarla mientras esté pendiente. Se cancela sola a las 24 horas"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/text_hint"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="18dp" />
+
+            <!-- Motivo -->
+            <TextView
+                style="@style/TransferEtiqueta"
+                android:text="Motivo (opcional)" />
+
+            <LinearLayout
+                android:id="@+id/filaMotivo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="26dp"
+                android:background="@drawable/bg_input_dark"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <TextView
+                    android:id="@+id/tvMotivo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Seleccioná un motivo"
+                    android:textColor="@color/text_hint"
+                    android:textSize="14sp" />
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:rotation="90"
+                    android:src="@drawable/ic_chevron_right"
+                    app:tint="@color/text_secondary" />
+            </LinearLayout>
+
+            <!-- Método de envío -->
+            <TextView
+                style="@style/TransferEtiqueta"
+                android:text="¿Cómo querés enviarla?" />
+
+            <LinearLayout
+                android:id="@+id/opcionAhora"
+                style="@style/TransferOpcionEnvio"
+                android:background="@drawable/bg_opcion_envio_selected">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/ivIconoAhora"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/ic_send"
+                        app:tint="@color/payx_orange" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Transferir ahora"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="26dp"
+                    android:text="Se envía al instante y no se puede deshacer"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/opcionPendiente"
+                style="@style/TransferOpcionEnvio"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/bg_opcion_envio_normal">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/ivIconoPendiente"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/ic_clock"
+                        app:tint="@color/text_secondary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Dejar pendiente"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="26dp"
+                    android:lineSpacingExtra="2dp"
+                    android:text="No se mueve la plata hasta que vos la confirmes. Podés cancelarla mientras esté pendiente. Se cancela sola a las 24 horas"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvErrorFormulario"
+                style="@style/TransferError"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btnContinuar"
+                style="@style/TransferBotonPrincipal"
+                android:text="Continuar" />
+
+            <Button
+                android:id="@+id/btnCancelar"
+                style="@style/TransferBotonSecundario"
+                android:text="Cancelar" />
         </LinearLayout>
 
-        <!-- ══ BOTONES ══ -->
-        <Button
-            android:id="@+id/btnContinuar"
+        <!-- ═════════════════════ PASO 2: CONFIRMAR ═════════════════════ -->
+        <LinearLayout
+            android:id="@+id/seccionConfirmar"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="10dp"
-            android:background="@drawable/bg_button_orange"
-            app:backgroundTint="@null"
-            android:text="Continuar"
-            android:textAllCaps="false"
-            android:textColor="@color/white"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
 
-        <Button
-            android:id="@+id/btnCancelar"
+            <TextView
+                style="@style/TransferTitulo"
+                android:text="Confirmá la transferencia" />
+
+            <TextView
+                style="@style/TransferSubtitulo"
+                android:text="Revisá que los datos sean correctos antes de continuar" />
+
+            <TextView
+                android:id="@+id/tvMontoConfirmar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/text_primary"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvEquivalenteConfirmar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:paddingHorizontal="24dp"
+                android:textColor="@color/text_hint"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_input_dark"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Le vas a transferir a"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12.5sp" />
+
+                <TextView
+                    android:id="@+id/tvNombreDestino"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="14dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="Alias" />
+                    <TextView android:id="@+id/tvAliasDestino" style="@style/TransferFilaValor" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="CVU" />
+                    <TextView android:id="@+id/tvCvuDestino" style="@style/TransferFilaValor" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/filaMotivoConfirmar" style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="Motivo" />
+                    <TextView android:id="@+id/tvMotivoConfirmar" style="@style/TransferFilaValor" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="Tipo de envío" />
+                    <TextView android:id="@+id/tvTipoEnvio" style="@style/TransferFilaValor" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvAvisoPendienteConfirmar"
+                style="@style/TransferAvisoPendiente"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="16dp"
+                android:text="No se descuenta nada hasta que confirmes la transferencia. Si pasan 24 horas sin confirmarla, se cancela automáticamente"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvErrorConfirmar"
+                style="@style/TransferError"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btnConfirmar"
+                style="@style/TransferBotonPrincipal"
+                android:text="Confirmar transferencia" />
+
+            <Button
+                android:id="@+id/btnEditar"
+                style="@style/TransferBotonSecundario"
+                android:text="Editar" />
+
+            <!-- No sabemos si se creó: en vez de reintentar, mandamos a revisar el listado -->
+            <Button
+                android:id="@+id/btnVerMisTransferencias"
+                style="@style/TransferBotonPrincipal"
+                android:text="Ver mis transferencias"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- ═════════════════════ PASO 3: ÉXITO ═════════════════════ -->
+        <LinearLayout
+            android:id="@+id/seccionExito"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginHorizontal="20dp"
-            android:background="@drawable/bg_button_outline"
-            app:backgroundTint="@null"
-            android:text="Cancelar"
-            android:textAllCaps="false"
-            android:textColor="@color/text_secondary"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingTop="24dp"
+            android:visibility="gone">
 
+            <ImageView
+                android:id="@+id/ivIconoExito"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/bg_icon_badge_dolares"
+                android:padding="18dp"
+                android:src="@drawable/ic_check"
+                app:tint="@color/color_positivo" />
+
+            <TextView
+                android:id="@+id/tvTituloExito"
+                style="@style/TransferTitulo" />
+
+            <TextView
+                android:id="@+id/tvTextoExito"
+                style="@style/TransferSubtitulo"
+                android:lineSpacingExtra="3dp"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvAvisoExito"
+                style="@style/TransferAvisoPendiente"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="20dp"
+                android:text="Si no la confirmás dentro de las próximas 24 horas, se cancelará automáticamente"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btnListo"
+                style="@style/TransferBotonPrincipal"
+                android:text="Listo" />
+        </LinearLayout>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

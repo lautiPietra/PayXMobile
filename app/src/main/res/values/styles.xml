@@ -28,4 +28,128 @@
         <item name="android:textStyle">bold</item>
     </style>
 
+    <!-- ══ Transferencias ══ -->
+    <style name="TransferTitulo">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingHorizontal">24dp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TransferSubtitulo">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">26dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingHorizontal">24dp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="TransferEtiqueta">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginHorizontal">20dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">13.5sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TransferOpcionEnvio">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginHorizontal">20dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">14dp</item>
+    </style>
+
+    <style name="TransferAvisoPendiente">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/bg_aviso_pendiente</item>
+        <item name="android:drawableStart">@drawable/ic_clock_16</item>
+        <item name="android:drawablePadding">10dp</item>
+        <item name="android:drawableTint">#F2A93B</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:textColor">#F2C27B</item>
+        <item name="android:textSize">12.5sp</item>
+    </style>
+
+    <style name="TransferError">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginHorizontal">20dp</item>
+        <item name="android:layout_marginBottom">14dp</item>
+        <item name="android:background">@drawable/bg_error_box</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:textColor">@color/color_negativo</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="TransferBotonPrincipal">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">52dp</item>
+        <item name="android:layout_marginHorizontal">20dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
+        <item name="android:background">@drawable/bg_button_orange</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TransferBotonSecundario" parent="TransferBotonPrincipal">
+        <item name="android:background">@drawable/bg_button_outline</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+
+    <style name="TransferFilaDato">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+
+    <style name="TransferFilaEtiqueta">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginEnd">12dp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="TransferFilaValor">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">end</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textIsSelectable">true</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="TransferBadgePendiente">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/bg_badge_pendiente</item>
+        <item name="android:drawableStart">@drawable/ic_clock_12</item>
+        <item name="android:drawablePadding">4dp</item>
+        <item name="android:drawableTint">#F2A93B</item>
+        <item name="android:paddingHorizontal">8dp</item>
+        <item name="android:paddingVertical">3dp</item>
+        <item name="android:text">Pendiente</item>
+        <item name="android:textColor">#F2C27B</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
 </resources>

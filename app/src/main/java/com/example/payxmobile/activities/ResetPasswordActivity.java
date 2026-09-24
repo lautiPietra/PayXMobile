@@ -9,13 +9,14 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.payxmobile.R;
-import com.example.payxmobile.model.ErrorResponse;
 import com.example.payxmobile.model.MensajeResponse;
 import com.example.payxmobile.model.ReenviarCodigoRequest;
 import com.example.payxmobile.model.ResetPasswordRequest;
+import com.example.payxmobile.network.ApiErrores;
 import com.example.payxmobile.network.RetrofitClient;
+import com.example.payxmobile.utils.EsperaReenvio;
+import com.example.payxmobile.utils.Validadores;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.gson.Gson;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -26,6 +27,8 @@ public class ResetPasswordActivity extends AppCompatActivity {
     private TextInputEditText etCodigo, etNuevaPassword, etConfirmarPassword;
     private Button btnCambiarPassword;
     private String email;
+    private boolean enCurso = false;
+    private EsperaReenvio esperaReenvio;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,28 +51,33 @@ public class ResetPasswordActivity extends AppCompatActivity {
 
         btnCambiarPassword.setOnClickListener(v -> cambiarPassword());
 
-        findViewById(R.id.tvReenviar).setOnClickListener(v -> reenviarCodigo());
+        // Tras tocar "Reenviar" queda bloqueado 1 minuto (evita mandar un mail por cada toque)
+        TextView tvReenviar = findViewById(R.id.tvReenviar);
+        esperaReenvio = new EsperaReenvio(this, EsperaReenvio.TIPO_RESET, email, tvReenviar);
+        esperaReenvio.reanudar();
+        tvReenviar.setOnClickListener(v -> reenviarCodigo());
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (esperaReenvio != null) esperaReenvio.detener();
     }
 
     private void cambiarPassword() {
         String codigo = getText(etCodigo);
-        String nuevaPassword = getText(etNuevaPassword);
-        String confirmar = getText(etConfirmarPassword);
+        // Las contraseñas no se recortan (igual que la web)
+        String nuevaPassword = sinRecortar(etNuevaPassword);
+        String confirmar = sinRecortar(etConfirmarPassword);
 
-        if (codigo.length() != 6) {
-            Toast.makeText(this, "Ingresá el código de 6 dígitos", Toast.LENGTH_SHORT).show();
+        String error = Validadores.codigo(codigo);
+        if (error == null) error = Validadores.passwordNueva(nuevaPassword);
+        if (error == null) error = Validadores.confirmacion(nuevaPassword, confirmar);
+        if (error != null) {
+            Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
             return;
         }
-
-        if (nuevaPassword.length() < 8) {
-            Toast.makeText(this, "La contraseña debe tener al menos 8 caracteres", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (!nuevaPassword.equals(confirmar)) {
-            Toast.makeText(this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (enCurso) return;
 
         setLoading(true);
 
@@ -88,15 +96,8 @@ public class ResetPasswordActivity extends AppCompatActivity {
                             startActivity(intent);
                             finish();
                         } else {
-                            try {
-                                ErrorResponse error = new Gson().fromJson(
-                                        response.errorBody().charStream(), ErrorResponse.class);
-                                Toast.makeText(ResetPasswordActivity.this,
-                                        error.getError(), Toast.LENGTH_LONG).show();
-                            } catch (Exception e) {
-                                Toast.makeText(ResetPasswordActivity.this,
-                                        "Error al cambiar la contraseña", Toast.LENGTH_SHORT).show();
-                            }
+                            Toast.makeText(ResetPasswordActivity.this,
+                                    ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
                         }
                     }
 
@@ -104,12 +105,14 @@ public class ResetPasswordActivity extends AppCompatActivity {
                     public void onFailure(Call<MensajeResponse> call, Throwable t) {
                         setLoading(false);
                         Toast.makeText(ResetPasswordActivity.this,
-                                "Sin conexión con el servidor", Toast.LENGTH_LONG).show();
+                                ApiErrores.mensajeFallo(t), Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     private void reenviarCodigo() {
+        if (!esperaReenvio.puedeReenviar()) return;
+        esperaReenvio.iniciar();
         RetrofitClient.getService(this)
                 .solicitarReset(new ReenviarCodigoRequest(email))
                 .enqueue(new Callback<MensajeResponse>() {
@@ -120,21 +123,26 @@ public class ResetPasswordActivity extends AppCompatActivity {
                                     "Código reenviado. Revisá tu email", Toast.LENGTH_SHORT).show();
                         } else {
                             Toast.makeText(ResetPasswordActivity.this,
-                                    "No se pudo reenviar el código", Toast.LENGTH_SHORT).show();
+                                    ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<MensajeResponse> call, Throwable t) {
                         Toast.makeText(ResetPasswordActivity.this,
-                                "Sin conexión con el servidor", Toast.LENGTH_LONG).show();
+                                ApiErrores.mensajeFallo(t), Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     private void setLoading(boolean loading) {
+        enCurso = loading;
         btnCambiarPassword.setEnabled(!loading);
         btnCambiarPassword.setText(loading ? "Cambiando..." : "Cambiar contraseña");
+    }
+
+    private String sinRecortar(TextInputEditText field) {
+        return field.getText() != null ? field.getText().toString() : "";
     }
 
     private String getText(TextInputEditText field) {

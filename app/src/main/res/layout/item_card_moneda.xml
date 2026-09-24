@@ -40,6 +40,16 @@
                 android:text="Disponible en tu cuenta"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
+
+            <!-- Aviso discreto: hay saldo pero el último refresco falló -->
+            <TextView
+                android:id="@+id/tvEstadoSaldo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sin conexión · último saldo"
+                android:textColor="@color/text_hint"
+                android:textSize="11sp"
+                android:visibility="gone" />
         </LinearLayout>
 
         <!-- Chips de criptomonedas (solo visible en la pestaña Cripto) -->
@@ -82,7 +92,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="0,00"
+                android:text=""
                 android:textColor="@color/text_primary"
                 android:textSize="34sp"
                 android:textStyle="bold" />
@@ -107,6 +117,47 @@
             android:textColor="@color/text_hint"
             android:textSize="12sp"
             android:visibility="gone" />
+
+        <!-- La cotización es el último precio bueno conocido (el proveedor no respondió) -->
+        <TextView
+            android:id="@+id/tvAvisoCotizacion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-6dp"
+            android:layout_marginBottom="8dp"
+            android:text="Precio desactualizado"
+            android:textColor="@color/text_hint"
+            android:textSize="11sp"
+            android:textStyle="italic"
+            android:visibility="gone" />
+
+        <!-- Falló la primera carga: nunca se muestra un 0 inventado -->
+        <LinearLayout
+            android:id="@+id/layoutErrorSaldo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvErrorSaldo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReintentarSaldo"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reintentar"
+                android:textAllCaps="false"
+                android:textColor="@color/payx_orange" />
+        </LinearLayout>
 
         <View
             android:layout_width="match_parent"

@@ -8,11 +8,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.payxmobile.R;
 import com.example.payxmobile.model.CambiarPasswordRequest;
-import com.example.payxmobile.model.ErrorResponse;
 import com.example.payxmobile.model.MensajeResponse;
+import com.example.payxmobile.network.ApiErrores;
 import com.example.payxmobile.network.RetrofitClient;
+import com.example.payxmobile.utils.CamposUi;
+import com.example.payxmobile.utils.Validadores;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.gson.Gson;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -22,6 +23,7 @@ public class CambiarPasswordActivity extends AppCompatActivity {
 
     private TextInputEditText etPasswordActual, etNuevaPassword, etConfirmarPassword;
     private Button btnCambiar;
+    private boolean enCurso = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,22 +40,19 @@ public class CambiarPasswordActivity extends AppCompatActivity {
     }
 
     private void cambiarPassword() {
+        // Las contraseñas no se recortan (igual que la web)
         String actual = getText(etPasswordActual);
         String nueva = getText(etNuevaPassword);
         String confirmar = getText(etConfirmarPassword);
 
-        if (actual.isEmpty() || nueva.isEmpty() || confirmar.isEmpty()) {
-            Toast.makeText(this, "Completá todos los campos", Toast.LENGTH_SHORT).show();
+        boolean hayError = CamposUi.error(etPasswordActual, Validadores.passwordObligatoria(actual));
+        hayError |= CamposUi.error(etNuevaPassword, Validadores.passwordNueva(nueva));
+        hayError |= CamposUi.error(etConfirmarPassword, Validadores.confirmacion(nueva, confirmar));
+        if (hayError) {
             return;
         }
-        if (nueva.length() < 8) {
-            Toast.makeText(this, "La nueva contraseña debe tener al menos 8 caracteres", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (!nueva.equals(confirmar)) {
-            Toast.makeText(this, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (enCurso) return;
+        enCurso = true;
 
         btnCambiar.setEnabled(false);
         btnCambiar.setText("Cambiando...");
@@ -63,36 +62,35 @@ public class CambiarPasswordActivity extends AppCompatActivity {
                 .enqueue(new Callback<MensajeResponse>() {
                     @Override
                     public void onResponse(Call<MensajeResponse> call, Response<MensajeResponse> response) {
+                        enCurso = false;
                         btnCambiar.setEnabled(true);
                         btnCambiar.setText("Cambiar contraseña");
                         if (response.isSuccessful()) {
+                            // El JWT sigue siendo válido: la sesión no se cierra
+                            etPasswordActual.setText("");
+                            etNuevaPassword.setText("");
+                            etConfirmarPassword.setText("");
                             Toast.makeText(CambiarPasswordActivity.this,
                                     "Contraseña actualizada correctamente", Toast.LENGTH_SHORT).show();
                             finish();
                         } else {
-                            try {
-                                ErrorResponse error = new Gson().fromJson(
-                                        response.errorBody().charStream(), ErrorResponse.class);
-                                Toast.makeText(CambiarPasswordActivity.this,
-                                        error.getError(), Toast.LENGTH_LONG).show();
-                            } catch (Exception e) {
-                                Toast.makeText(CambiarPasswordActivity.this,
-                                        "Error al cambiar la contraseña", Toast.LENGTH_SHORT).show();
-                            }
+                            Toast.makeText(CambiarPasswordActivity.this,
+                                    ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<MensajeResponse> call, Throwable t) {
+                        enCurso = false;
                         btnCambiar.setEnabled(true);
                         btnCambiar.setText("Cambiar contraseña");
                         Toast.makeText(CambiarPasswordActivity.this,
-                                "Sin conexión con el servidor", Toast.LENGTH_LONG).show();
+                                ApiErrores.mensajeFallo(t), Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     private String getText(TextInputEditText field) {
-        return field.getText() != null ? field.getText().toString().trim() : "";
+        return field.getText() != null ? field.getText().toString() : "";
     }
 }

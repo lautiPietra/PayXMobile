@@ -8,12 +8,13 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.payxmobile.R;
-import com.example.payxmobile.model.ErrorResponse;
 import com.example.payxmobile.model.MensajeResponse;
 import com.example.payxmobile.model.ReenviarCodigoRequest;
+import com.example.payxmobile.network.ApiErrores;
 import com.example.payxmobile.network.RetrofitClient;
+import com.example.payxmobile.utils.CamposUi;
+import com.example.payxmobile.utils.Validadores;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.gson.Gson;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -23,6 +24,7 @@ public class OlvidePasswordActivity extends AppCompatActivity {
 
     private TextInputEditText etEmail;
     private Button btnEnviar;
+    private boolean enCurso = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,10 +42,12 @@ public class OlvidePasswordActivity extends AppCompatActivity {
     private void solicitarReset() {
         String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
 
-        if (email.isEmpty()) {
-            Toast.makeText(this, "Ingresá tu email", Toast.LENGTH_SHORT).show();
+        String errorEmail = Validadores.email(email);
+        if (errorEmail != null) {
+            CamposUi.error(etEmail, errorEmail);
             return;
         }
+        if (enCurso) return;
 
         setLoading(true);
 
@@ -53,20 +57,14 @@ public class OlvidePasswordActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(Call<MensajeResponse> call, Response<MensajeResponse> response) {
                         setLoading(false);
+                        // El backend responde 200 exista o no el email: se avanza igual a la pantalla del código
                         if (response.isSuccessful()) {
                             Intent intent = new Intent(OlvidePasswordActivity.this, ResetPasswordActivity.class);
                             intent.putExtra("email", email);
                             startActivity(intent);
                         } else {
-                            try {
-                                ErrorResponse error = new Gson().fromJson(
-                                        response.errorBody().charStream(), ErrorResponse.class);
-                                Toast.makeText(OlvidePasswordActivity.this,
-                                        error.getError(), Toast.LENGTH_LONG).show();
-                            } catch (Exception e) {
-                                Toast.makeText(OlvidePasswordActivity.this,
-                                        "Error al enviar el código", Toast.LENGTH_SHORT).show();
-                            }
+                            Toast.makeText(OlvidePasswordActivity.this,
+                                    ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
                         }
                     }
 
@@ -74,12 +72,13 @@ public class OlvidePasswordActivity extends AppCompatActivity {
                     public void onFailure(Call<MensajeResponse> call, Throwable t) {
                         setLoading(false);
                         Toast.makeText(OlvidePasswordActivity.this,
-                                "Sin conexión con el servidor", Toast.LENGTH_LONG).show();
+                                ApiErrores.mensajeFallo(t), Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     private void setLoading(boolean loading) {
+        enCurso = loading;
         btnEnviar.setEnabled(!loading);
         btnEnviar.setText(loading ? "Enviando..." : "Enviar código");
     }

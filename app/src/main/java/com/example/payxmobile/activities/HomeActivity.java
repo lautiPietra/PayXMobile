@@ -1,5 +1,7 @@
 package com.example.payxmobile.activities;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.graphics.Typeface;
@@ -22,17 +24,23 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.payxmobile.R;
 import com.example.payxmobile.model.PerfilResponse;
 import com.example.payxmobile.model.SinLeerResponse;
 import com.example.payxmobile.network.RetrofitClient;
+import com.example.payxmobile.saldos.EstadoSaldos;
+import com.example.payxmobile.saldos.SaldosRepository;
+import com.example.payxmobile.saldos.VistaSaldo;
+import com.example.payxmobile.utils.Avatar;
+import com.example.payxmobile.utils.Saludo;
+import com.example.payxmobile.utils.SesionUtils;
 import com.example.payxmobile.utils.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-import java.text.NumberFormat;
-import java.util.Locale;
+import java.math.BigDecimal;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -43,7 +51,6 @@ public class HomeActivity extends AppCompatActivity {
     private static final int POS_PESOS = 0;
     private static final int POS_DOLARES = 1;
     private static final int POS_CRIPTO = 2;
-    private static final String[] MONEDAS_CRIPTO = {"BTC", "ETH", "SOL", "USDT", "BNB", "XRP"};
 
     private SessionManager sessionManager;
     private View badgeNotificaciones;
@@ -57,13 +64,18 @@ public class HomeActivity extends AppCompatActivity {
     private OnBackPressedCallback cerrarMenuAlVolver;
     private BottomNavigationView bottomNav;
 
-    private final NumberFormat formatoMonto = NumberFormat.getNumberInstance(new Locale("es", "AR"));
+    private static final String ESTADO_SALDO_VISIBLE = "saldo_visible";
+    private static final String ESTADO_CRIPTO = "cripto_seleccionada";
 
-    private double saldoPesos = 0;
-    private double saldoUsd = 0;
-    private String alias;
-    private String cvu;
+    // Saldos y cotizaciones: siempre del repositorio compartido (nunca un 0 inventado)
+    private SaldosRepository saldosRepository;
+    private EstadoSaldos estadoSaldos;
+    private final SaldosRepository.Observador observadorSaldos = this::onEstadoSaldos;
+    private SwipeRefreshLayout swipeRefresh;
+    private boolean pullEnCurso = false;
     private boolean saldoVisible = true;
+    private String criptoSeleccionada = PerfilResponse.CRIPTOS[0];
+    private String fotoMostrada;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,9 +88,24 @@ public class HomeActivity extends AppCompatActivity {
             irALogin();
             return;
         }
+        if (!sessionManager.tieneSesionVigente()) {
+            SesionUtils.sesionVencida(this);
+            return;
+        }
 
-        formatoMonto.setMinimumFractionDigits(2);
-        formatoMonto.setMaximumFractionDigits(2);
+        // El ojito y la cripto elegida sobreviven a rotar / plegar el teléfono
+        if (savedInstanceState != null) {
+            saldoVisible = savedInstanceState.getBoolean(ESTADO_SALDO_VISIBLE, true);
+            criptoSeleccionada = savedInstanceState.getString(ESTADO_CRIPTO, PerfilResponse.CRIPTOS[0]);
+        }
+        saldosRepository = SaldosRepository.get(this);
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        swipeRefresh.setColorSchemeResources(R.color.payx_orange);
+        swipeRefresh.setOnRefreshListener(() -> {
+            pullEnCurso = true;
+            saldosRepository.refrescarTodo();
+            onEstadoSaldos(saldosRepository.getEstado());
+        });
 
         badgeNotificaciones = findViewById(R.id.badgeNotificaciones);
         tabPesos = findViewById(R.id.tabPesos);
@@ -116,48 +143,74 @@ public class HomeActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (bottomNav == null) return;
+        // La app pudo quedar en segundo plano más de lo que dura el token: se chequea el "exp" sin llamar al backend
+        if (!sessionManager.tieneSesionVigente()) {
+            SesionUtils.sesionVencida(this);
+            return;
+        }
         bottomNav.setSelectedItemId(R.id.nav_inicio);
+        mostrarAvatarMenu();
         actualizarBadge();
-        cargarPerfil();
+    }
+
+    // Auto-refresco solo en primer plano: arranca (y refresca YA) en onStart, se corta en onStop
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (saldosRepository == null || !sessionManager.tieneSesionVigente()) return;
+        saldosRepository.observar(observadorSaldos);
+        saldosRepository.iniciarAutoRefresco();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (saldosRepository == null) return;
+        saldosRepository.detenerAutoRefresco();
+        saldosRepository.dejarDeObservar(observadorSaldos);
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(ESTADO_SALDO_VISIBLE, saldoVisible);
+        outState.putString(ESTADO_CRIPTO, criptoSeleccionada);
     }
 
     // ── Saludo ────────────────────────────────────────────────────────────────
 
     private void configurarSaludo() {
-        String nombreCompleto = sessionManager.getNombreCompleto();
-        String primerNombre = nombreCompleto.contains(" ")
-                ? nombreCompleto.split(" ")[0]
-                : nombreCompleto;
+        String saludo = "Hola, " + Saludo.primerNombre(sessionManager.getNombreCompleto());
 
         TextView tvBienvenida = findViewById(R.id.tvBienvenida);
-        tvBienvenida.setText("Hola, " + primerNombre);
+        tvBienvenida.setText(saludo);
 
         TextView tvMenuSaludo = findViewById(R.id.tvMenuSaludo);
-        tvMenuSaludo.setText("Hola, " + primerNombre);
+        tvMenuSaludo.setText(saludo);
     }
 
-    // ── Saldo real (alias y CVU se muestran en Perfil / Tarjeta virtual) ────────
+    // ── Saldos (repositorio compartido) ─────────────────────────────────────────
 
-    private void cargarPerfil() {
-        RetrofitClient.getService(this).obtenerPerfil()
-                .enqueue(new Callback<PerfilResponse>() {
-                    @Override
-                    public void onResponse(Call<PerfilResponse> call, Response<PerfilResponse> response) {
-                        if (response.isSuccessful() && response.body() != null) {
-                            PerfilResponse perfil = response.body();
-                            saldoPesos = perfil.getSaldoPesos();
-                            saldoUsd = perfil.getSaldoUsd();
-                            alias = perfil.getAlias();
-                            cvu = perfil.getCvu();
-                            pagerAdapter.notifyDataSetChanged();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<PerfilResponse> call, Throwable t) {
-                        // se mantiene el ultimo saldo conocido (o 0 la primera vez)
-                    }
-                });
+    private void onEstadoSaldos(EstadoSaldos estado) {
+        if (isFinishing()) return;
+        if (estado.sesionInvalida) {
+            SesionUtils.sesionInvalida(this);
+            return;
+        }
+        estadoSaldos = estado;
+        if (estado.perfil != null) {
+            String foto = estado.perfil.getFotoPerfilUrl();
+            if (foto != null ? !foto.equals(fotoMostrada) : fotoMostrada != null) {
+                fotoMostrada = foto;
+                sessionManager.actualizarFotoPerfilUrl(foto);
+                mostrarAvatarMenu();
+            }
+        }
+        if (pullEnCurso && !estado.cargandoSaldo && !estado.cargandoCotizaciones) {
+            pullEnCurso = false;
+            swipeRefresh.setRefreshing(false);
+        }
+        if (pagerAdapter != null) pagerAdapter.actualizarSaldos();
     }
 
     // ── Card de saldo: tabs + carrusel (Pesos / Dólares / Cripto) ───────────────
@@ -180,7 +233,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onPageSelected(int position) {
                 actualizarTabs(position);
-                pagerAdapter.animarPagina(position);
+                pagerAdapter.ajustarAlturaDe(position);
                 vpSaldo.requestLayout();
             }
         });
@@ -256,6 +309,12 @@ public class HomeActivity extends AppCompatActivity {
         findViewById(R.id.itemMovimientos).setOnClickListener(v -> {
             cerrarMenu();
             startActivity(new Intent(HomeActivity.this, MovimientosActivity.class));
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        });
+
+        findViewById(R.id.itemMisTransferencias).setOnClickListener(v -> {
+            cerrarMenu();
+            startActivity(new Intent(HomeActivity.this, MisTransferenciasActivity.class));
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
@@ -365,7 +424,10 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void abrirTransferenciaCripto() {
-        startActivity(new Intent(this, TransferenciaCriptoActivity.class));
+        // Misma pantalla de envío, con selector de cripto (BTC por defecto, como la web)
+        Intent intent = new Intent(this, TransferenciaActivity.class);
+        intent.putExtra(TransferenciaActivity.EXTRA_MONEDA, "BTC");
+        startActivity(intent);
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
@@ -432,16 +494,21 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void cerrarSesion() {
-        sessionManager.clearSession();
-        irALogin();
+        SesionUtils.cerrarSesion(this);
+    }
+
+    private void mostrarAvatarMenu() {
+        Avatar.mostrar(findViewById(R.id.ivMenuFoto), findViewById(R.id.tvMenuInicial),
+                sessionManager.getNombreCompleto(), sessionManager.getFotoPerfilUrl());
     }
 
     // ── Adapter del carrusel de saldo ─────────────────────────────────────────
 
     private class SaldoPagerAdapter extends RecyclerView.Adapter<SaldoPagerAdapter.SaldoViewHolder> {
 
+        private static final long DURACION_ANIMACION_MS = 700;
+
         private final SparseArray<SaldoViewHolder> holders = new SparseArray<>();
-        private String monedaCriptoSeleccionada = MONEDAS_CRIPTO[0];
 
         @NonNull
         @Override
@@ -454,17 +521,31 @@ public class HomeActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull SaldoViewHolder holder, int position) {
             holders.put(position, holder);
-            bindContenido(holder, position);
+            holder.valorMostrado = null;
             bindEstilo(holder, position);
             if (position == POS_CRIPTO) {
                 bindChips(holder);
             }
-            animarEntrada(holder, position);
+            animarEntrada(holder);
+            render(holder, position, true);
             holder.itemView.post(() -> {
                 if (holder.getBindingAdapterPosition() == vpSaldo.getCurrentItem()) {
                     ajustarAltura(holder);
                 }
             });
+        }
+
+        /** Llamado con cada estado nuevo del repositorio: actualiza en el lugar, sin re-crear las páginas. */
+        void actualizarSaldos() {
+            for (int i = 0; i < holders.size(); i++) {
+                render(holders.valueAt(i), holders.keyAt(i), true);
+            }
+            ajustarAlturaDe(vpSaldo.getCurrentItem());
+        }
+
+        void ajustarAlturaDe(int position) {
+            SaldoViewHolder holder = holders.get(position);
+            if (holder != null) ajustarAltura(holder);
         }
 
         private void ajustarAltura(SaldoViewHolder holder) {
@@ -485,6 +566,7 @@ public class HomeActivity extends AppCompatActivity {
         @Override
         public void onViewRecycled(@NonNull SaldoViewHolder holder) {
             super.onViewRecycled(holder);
+            cancelarAnimacion(holder);
             int index = holders.indexOfValue(holder);
             if (index >= 0) holders.removeAt(index);
         }
@@ -527,10 +609,6 @@ public class HomeActivity extends AppCompatActivity {
             holder.btnVerMovimientos.setBackgroundResource(botonTintBg);
             holder.btnVerMovimientos.setTextColor(getColor(textoBoton));
 
-            holder.scrollChips.setVisibility(position == POS_CRIPTO ? View.VISIBLE : View.GONE);
-            holder.tvEquivalente.setVisibility(position == POS_CRIPTO ? View.VISIBLE : View.GONE);
-            holder.tvSimbolo.setVisibility(position == POS_CRIPTO ? View.GONE : View.VISIBLE);
-
             holder.btnTransferir.setOnClickListener(v -> {
                 if (position == POS_PESOS) abrirTransferencia("ARS");
                 else if (position == POS_DOLARES) abrirTransferencia("USD");
@@ -539,38 +617,112 @@ public class HomeActivity extends AppCompatActivity {
             holder.btnVerMovimientos.setOnClickListener(v -> mostrarProximamente());
             holder.btnOjo.setOnClickListener(v -> {
                 saldoVisible = !saldoVisible;
-                refrescarVisibilidad();
+                // Ocultar/mostrar no anima: cambia en el momento en todas las pestañas
+                for (int i = 0; i < holders.size(); i++) {
+                    render(holders.valueAt(i), holders.keyAt(i), false);
+                }
             });
+            holder.btnReintentarSaldo.setOnClickListener(v -> saldosRepository.refrescarTodo());
         }
 
-        private void bindContenido(SaldoViewHolder holder, int position) {
-            switch (position) {
-                case POS_DOLARES:
-                    holder.tvSimbolo.setText("US$");
-                    holder.tvMonto.setText(formatearMonto(saldoUsd, null));
-                    break;
-                case POS_CRIPTO:
-                    holder.tvMonto.setText(formatearMonto(0, monedaCriptoSeleccionada));
-                    holder.tvEquivalente.setText("≈ $ 0,00");
-                    break;
-                default:
-                    holder.tvSimbolo.setText("$");
-                    holder.tvMonto.setText(formatearMonto(saldoPesos, null));
-                    break;
-            }
+        /** Dibuja la pestaña según {@link VistaSaldo}: skeleton, error con "Reintentar" o saldo. */
+        private void render(SaldoViewHolder holder, int position, boolean animar) {
+            VistaSaldo vista = VistaSaldo.de(estadoSaldos, position, criptoSeleccionada, saldoVisible);
+            boolean esCripto = position == POS_CRIPTO;
+            boolean hayError = vista.tipo == VistaSaldo.Tipo.ERROR;
+
+            holder.scrollChips.setVisibility(esCripto ? View.VISIBLE : View.GONE);
+            holder.tvSimbolo.setText(vista.prefijo);
+            holder.tvSimbolo.setVisibility(!esCripto && !hayError ? View.VISIBLE : View.GONE);
             holder.btnOjo.setImageResource(saldoVisible ? R.drawable.ic_eye : R.drawable.ic_eye_off);
+            holder.btnOjo.setVisibility(vista.tipo == VistaSaldo.Tipo.SALDO ? View.VISIBLE : View.INVISIBLE);
+            holder.layoutErrorSaldo.setVisibility(hayError ? View.VISIBLE : View.GONE);
+            holder.tvErrorSaldo.setText(vista.error);
+            holder.tvMonto.setVisibility(hayError ? View.GONE : View.VISIBLE);
+            holder.tvEstadoSaldo.setVisibility(vista.desactualizado ? View.VISIBLE : View.GONE);
+
+            if (vista.tipo == VistaSaldo.Tipo.CARGANDO) {
+                // Skeleton: nunca un "0,00" que parezca un saldo real
+                cancelarAnimacion(holder);
+                holder.tvMonto.setText("");
+                holder.tvMonto.setBackgroundResource(R.drawable.bg_skeleton);
+                holder.valorMostrado = null;
+            } else {
+                holder.tvMonto.setBackground(null);
+                if (!hayError) mostrarMonto(holder, position, vista, animar);
+            }
+
+            holder.tvEquivalente.setVisibility(vista.equivalente != null ? View.VISIBLE : View.GONE);
+            holder.tvEquivalente.setText(vista.equivalente);
+            holder.tvAvisoCotizacion.setVisibility(vista.cotizacionDesactualizada ? View.VISIBLE : View.GONE);
+        }
+
+        /** Anima de lo que se veía al valor nuevo (700 ms, como la web). Todo en BigDecimal, nunca float. */
+        private void mostrarMonto(SaldoViewHolder holder, int position, VistaSaldo vista, boolean animar) {
+            BigDecimal hasta = vista.valor;
+            String clave = position == POS_CRIPTO ? criptoSeleccionada : "";
+            boolean mismoValor = hasta != null && holder.valorMostrado != null
+                    && hasta.compareTo(holder.valorMostrado) == 0 && clave.equals(holder.claveMostrada);
+
+            if (hasta == null || !animar || mismoValor) {
+                // Oculto, sin animación pedida, o refresco sin cambios: texto directo (no parpadea).
+                // Si hay una animación en curso hacia este mismo valor, se la deja terminar.
+                if (!(mismoValor && holder.animador != null)) {
+                    cancelarAnimacion(holder);
+                    holder.tvMonto.setText(vista.monto);
+                }
+                holder.valorMostrado = hasta;
+                holder.claveMostrada = clave;
+                return;
+            }
+
+            cancelarAnimacion(holder);
+            BigDecimal desde = holder.valorMostrado != null && clave.equals(holder.claveMostrada)
+                    ? holder.valorMostrado : BigDecimal.ZERO;
+            BigDecimal delta = hasta.subtract(desde);
+            String cripto = criptoSeleccionada;
+            String textoFinal = vista.monto;
+            ValueAnimator animador = ValueAnimator.ofFloat(0f, 1f);
+            animador.setDuration(DURACION_ANIMACION_MS);
+            animador.setInterpolator(new DecelerateInterpolator());
+            animador.addUpdateListener(a -> {
+                BigDecimal fraccion = BigDecimal.valueOf(a.getAnimatedFraction());
+                holder.tvMonto.setText(VistaSaldo.formatear(position, cripto, desde.add(delta.multiply(fraccion))));
+            });
+            animador.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    // El último cuadro es SIEMPRE el texto exacto del saldo
+                    holder.tvMonto.setText(textoFinal);
+                    if (holder.animador == animation) holder.animador = null;
+                }
+            });
+            holder.valorMostrado = hasta;
+            holder.claveMostrada = clave;
+            holder.animador = animador;
+            animador.start();
+        }
+
+        private void cancelarAnimacion(SaldoViewHolder holder) {
+            if (holder.animador != null) {
+                ValueAnimator a = holder.animador;
+                holder.animador = null;
+                a.removeAllUpdateListeners();
+                a.removeAllListeners();
+                a.cancel();
+            }
         }
 
         private void bindChips(SaldoViewHolder holder) {
             holder.layoutChips.removeAllViews();
-            for (String moneda : MONEDAS_CRIPTO) {
+            for (String moneda : PerfilResponse.CRIPTOS) {
                 TextView chip = new TextView(HomeActivity.this);
                 chip.setText(moneda);
                 chip.setTextSize(12.5f);
                 chip.setTypeface(null, Typeface.BOLD);
                 chip.setBackgroundResource(R.drawable.bg_coin_chip);
                 chip.setTextColor(getColorStateList(R.color.coin_chip_text));
-                chip.setSelected(moneda.equals(monedaCriptoSeleccionada));
+                chip.setSelected(moneda.equals(criptoSeleccionada));
                 chip.setPadding(dpA(16), dpA(8), dpA(16), dpA(8));
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -578,33 +730,20 @@ public class HomeActivity extends AppCompatActivity {
                 chip.setLayoutParams(params);
 
                 chip.setOnClickListener(v -> {
-                    monedaCriptoSeleccionada = moneda;
+                    criptoSeleccionada = moneda;
                     for (int i = 0; i < holder.layoutChips.getChildCount(); i++) {
                         holder.layoutChips.getChildAt(i).setSelected(false);
                     }
                     chip.setSelected(true);
-                    holder.tvMonto.setText(formatearMonto(0, monedaCriptoSeleccionada));
+                    render(holder, POS_CRIPTO, true);
+                    ajustarAltura(holder);
                 });
 
                 holder.layoutChips.addView(chip);
             }
         }
 
-        private String formatearMonto(double monto, String sufijoMoneda) {
-            if (!saldoVisible) return "••••••";
-            String numero = formatoMonto.format(monto);
-            return sufijoMoneda != null ? numero + " " + sufijoMoneda : numero;
-        }
-
-        private void refrescarVisibilidad() {
-            for (int i = 0; i < holders.size(); i++) {
-                int position = holders.keyAt(i);
-                SaldoViewHolder holder = holders.valueAt(i);
-                bindContenido(holder, position);
-            }
-        }
-
-        private void animarEntrada(SaldoViewHolder holder, int position) {
+        private void animarEntrada(SaldoViewHolder holder) {
             holder.tvMonto.setAlpha(0f);
             holder.tvMonto.setTranslationY(dpA(16));
             holder.tvMonto.animate()
@@ -616,38 +755,21 @@ public class HomeActivity extends AppCompatActivity {
 
             holder.tvEtiqueta.setAlpha(0f);
             holder.tvEtiqueta.animate().alpha(1f).setStartDelay(80).setDuration(350).start();
-
-            animarConteo(holder, position);
-        }
-
-        void animarPagina(int position) {
-            SaldoViewHolder holder = holders.get(position);
-            if (holder != null) {
-                animarConteo(holder, position);
-                ajustarAltura(holder);
-            }
-        }
-
-        private void animarConteo(SaldoViewHolder holder, int position) {
-            if (!saldoVisible) return;
-            double destino = position == POS_DOLARES ? saldoUsd : position == POS_CRIPTO ? 0 : saldoPesos;
-            String sufijo = position == POS_CRIPTO ? monedaCriptoSeleccionada : null;
-
-            ValueAnimator animador = ValueAnimator.ofFloat(0f, (float) destino);
-            animador.setDuration(700);
-            animador.setInterpolator(new DecelerateInterpolator());
-            animador.addUpdateListener(animation ->
-                    holder.tvMonto.setText(formatearMonto((float) animation.getAnimatedValue(), sufijo)));
-            animador.start();
         }
 
         class SaldoViewHolder extends RecyclerView.ViewHolder {
             ImageView ivIcono;
             TextView tvEtiqueta, tvSimbolo, tvMonto, tvEquivalente;
+            TextView tvEstadoSaldo, tvAvisoCotizacion, tvErrorSaldo;
+            View layoutErrorSaldo, btnReintentarSaldo;
             ImageButton btnOjo;
             android.widget.HorizontalScrollView scrollChips;
             LinearLayout layoutChips;
             android.widget.Button btnTransferir, btnVerMovimientos;
+            // Lo que muestra hoy el número grande (para animar solo cuando cambia)
+            BigDecimal valorMostrado;
+            String claveMostrada;
+            ValueAnimator animador;
 
             SaldoViewHolder(@NonNull View itemView) {
                 super(itemView);
@@ -656,6 +778,11 @@ public class HomeActivity extends AppCompatActivity {
                 tvSimbolo = itemView.findViewById(R.id.tvSimbolo);
                 tvMonto = itemView.findViewById(R.id.tvMonto);
                 tvEquivalente = itemView.findViewById(R.id.tvEquivalente);
+                tvEstadoSaldo = itemView.findViewById(R.id.tvEstadoSaldo);
+                tvAvisoCotizacion = itemView.findViewById(R.id.tvAvisoCotizacion);
+                layoutErrorSaldo = itemView.findViewById(R.id.layoutErrorSaldo);
+                tvErrorSaldo = itemView.findViewById(R.id.tvErrorSaldo);
+                btnReintentarSaldo = itemView.findViewById(R.id.btnReintentarSaldo);
                 btnOjo = itemView.findViewById(R.id.btnOjo);
                 scrollChips = itemView.findViewById(R.id.scrollChips);
                 layoutChips = itemView.findViewById(R.id.layoutChips);
