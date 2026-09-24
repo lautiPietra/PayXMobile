@@ -82,11 +82,6 @@
             android:screenOrientation="portrait" />
 
         <activity
-            android:name=".activities.MisTransferenciasActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
-
-        <activity
             android:name=".activities.ServiciosActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

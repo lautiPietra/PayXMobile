@@ -10,12 +10,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.payxmobile.R;
 import com.example.payxmobile.model.NotificacionResponse;
+import com.example.payxmobile.utils.FormatoFecha;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.Locale;
 
 public class NotificacionesAdapter extends RecyclerView.Adapter<NotificacionesAdapter.ViewHolder> {
 
@@ -46,35 +44,9 @@ public class NotificacionesAdapter extends RecyclerView.Adapter<NotificacionesAd
         return items.size();
     }
 
+    // El backend manda "2026-09-24T20:53:07.815346Z" (UTC con microsegundos): se muestra en hora local
     private String formatearFecha(String fechaIso) {
-        if (fechaIso == null) return "";
-        try {
-            SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault());
-            Date fecha = parser.parse(fechaIso);
-            if (fecha == null) return fechaIso;
-
-            String hora = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(fecha);
-            Calendar calFecha = Calendar.getInstance();
-            calFecha.setTime(fecha);
-            Calendar hoy = Calendar.getInstance();
-
-            if (calFecha.get(Calendar.YEAR) == hoy.get(Calendar.YEAR)
-                    && calFecha.get(Calendar.DAY_OF_YEAR) == hoy.get(Calendar.DAY_OF_YEAR)) {
-                return "Hoy a las " + hora;
-            }
-
-            Calendar ayer = Calendar.getInstance();
-            ayer.add(Calendar.DAY_OF_YEAR, -1);
-            if (calFecha.get(Calendar.YEAR) == ayer.get(Calendar.YEAR)
-                    && calFecha.get(Calendar.DAY_OF_YEAR) == ayer.get(Calendar.DAY_OF_YEAR)) {
-                return "Ayer a las " + hora;
-            }
-
-            String d = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(fecha);
-            return d + " a las " + hora;
-        } catch (Exception e) {
-            return fechaIso;
-        }
+        return FormatoFecha.fechaHora(fechaIso, ZoneId.systemDefault());
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

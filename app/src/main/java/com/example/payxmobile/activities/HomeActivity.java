@@ -28,13 +28,19 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.payxmobile.R;
+import com.example.payxmobile.actividad.VistaMovimientos;
 import com.example.payxmobile.model.PerfilResponse;
 import com.example.payxmobile.model.SinLeerResponse;
+import com.example.payxmobile.model.TransferenciaResponse;
 import com.example.payxmobile.network.RetrofitClient;
 import com.example.payxmobile.saldos.EstadoSaldos;
 import com.example.payxmobile.saldos.SaldosRepository;
 import com.example.payxmobile.saldos.VistaSaldo;
+import com.example.payxmobile.transferencias.TransferenciasRepository;
+import com.example.payxmobile.transferencias.ui.DetalleTransferenciaSheet;
+import com.example.payxmobile.transferencias.ui.FilaTransferenciaVista;
 import com.example.payxmobile.utils.Avatar;
+import com.example.payxmobile.utils.NavegacionInferior;
 import com.example.payxmobile.utils.Saludo;
 import com.example.payxmobile.utils.SesionUtils;
 import com.example.payxmobile.utils.SessionManager;
@@ -77,6 +83,11 @@ public class HomeActivity extends AppCompatActivity {
     private String criptoSeleccionada = PerfilResponse.CRIPTOS[0];
     private String fotoMostrada;
 
+    // Últimas actividades: mismo repositorio (y mismo polling) que "Mis movimientos"
+    private TransferenciasRepository transferenciasRepo;
+    private final TransferenciasRepository.Observador observadorActividades = this::onActividades;
+    private DetalleTransferenciaSheet detalleSheet;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,11 +110,14 @@ public class HomeActivity extends AppCompatActivity {
             criptoSeleccionada = savedInstanceState.getString(ESTADO_CRIPTO, PerfilResponse.CRIPTOS[0]);
         }
         saldosRepository = SaldosRepository.get(this);
+        transferenciasRepo = TransferenciasRepository.get(this);
+        detalleSheet = new DetalleTransferenciaSheet(this);
         swipeRefresh = findViewById(R.id.swipeRefresh);
         swipeRefresh.setColorSchemeResources(R.color.payx_orange);
         swipeRefresh.setOnRefreshListener(() -> {
             pullEnCurso = true;
             saldosRepository.refrescarTodo();
+            transferenciasRepo.refrescar();
             onEstadoSaldos(saldosRepository.getEstado());
         });
 
@@ -136,7 +150,8 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(new Intent(this, PlazoFijoActivity.class));
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
-        findViewById(R.id.tvConsultarTodas).setOnClickListener(v -> mostrarProximamente());
+        findViewById(R.id.tvConsultarTodas).setOnClickListener(v -> abrirMovimientos());
+        findViewById(R.id.btnReintentarActividades).setOnClickListener(v -> transferenciasRepo.refrescar());
     }
 
     @Override
@@ -160,6 +175,8 @@ public class HomeActivity extends AppCompatActivity {
         if (saldosRepository == null || !sessionManager.tieneSesionVigente()) return;
         saldosRepository.observar(observadorSaldos);
         saldosRepository.iniciarAutoRefresco();
+        transferenciasRepo.observar(observadorActividades);
+        transferenciasRepo.iniciarAutoRefresco();
     }
 
     @Override
@@ -168,6 +185,8 @@ public class HomeActivity extends AppCompatActivity {
         if (saldosRepository == null) return;
         saldosRepository.detenerAutoRefresco();
         saldosRepository.dejarDeObservar(observadorSaldos);
+        transferenciasRepo.detenerAutoRefresco();
+        transferenciasRepo.dejarDeObservar(observadorActividades);
     }
 
     @Override
@@ -312,12 +331,6 @@ public class HomeActivity extends AppCompatActivity {
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
 
-        findViewById(R.id.itemMisTransferencias).setOnClickListener(v -> {
-            cerrarMenu();
-            startActivity(new Intent(HomeActivity.this, MisTransferenciasActivity.class));
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-        });
-
         findViewById(R.id.itemPlazoFijo).setOnClickListener(v -> {
             cerrarMenu();
             startActivity(new Intent(HomeActivity.this, PlazoFijoActivity.class));
@@ -455,27 +468,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private void configurarBottomNav() {
         bottomNav = findViewById(R.id.bottomNav);
-        bottomNav.setSelectedItemId(R.id.nav_inicio);
-
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_inicio) {
-                return true;
-            } else if (id == R.id.nav_actividad) {
-                startActivity(new Intent(HomeActivity.this, MovimientosActivity.class));
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                return false;
-            } else if (id == R.id.nav_inversiones) {
-                startActivity(new Intent(HomeActivity.this, InversionesActivity.class));
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                return false;
-            } else if (id == R.id.nav_perfil) {
-                startActivity(new Intent(HomeActivity.this, PerfilActivity.class));
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                return false;
-            }
-            return false;
-        });
+        NavegacionInferior.configurar(this, bottomNav, R.id.nav_inicio);
     }
 
     private void irALogin() {
@@ -495,6 +488,51 @@ public class HomeActivity extends AppCompatActivity {
 
     private void cerrarSesion() {
         SesionUtils.cerrarSesion(this);
+    }
+
+    // ── Últimas actividades (las 4 más recientes) ───────────────────────────────
+
+    private void onActividades(TransferenciasRepository.Estado estado) {
+        if (isFinishing()) return;
+        VistaMovimientos v = VistaMovimientos.inicio(estado);
+        LinearLayout lista = findViewById(R.id.layoutActividades);
+        boolean hayFilas = v.modo == VistaMovimientos.Modo.LISTA;
+        findViewById(R.id.layoutEstadoActividades).setVisibility(hayFilas ? View.GONE : View.VISIBLE);
+        lista.setVisibility(hayFilas ? View.VISIBLE : View.GONE);
+        findViewById(R.id.progressActividades).setVisibility(
+                v.modo == VistaMovimientos.Modo.CARGANDO ? View.VISIBLE : View.GONE);
+        findViewById(R.id.btnReintentarActividades).setVisibility(
+                v.modo == VistaMovimientos.Modo.ERROR ? View.VISIBLE : View.GONE);
+        // Nunca "Todavía no tenés movimientos" si en realidad no se pudieron cargar
+        ((TextView) findViewById(R.id.tvEstadoActividades)).setText(
+                v.modo == VistaMovimientos.Modo.CARGANDO ? "Cargando movimientos..."
+                        : v.modo == VistaMovimientos.Modo.ERROR ? v.error
+                        : VistaMovimientos.MSG_VACIO);
+        if (!hayFilas) return;
+
+        // Se reusan las filas existentes: el refresco cada 10 s no parpadea
+        LayoutInflater inflater = LayoutInflater.from(this);
+        while (lista.getChildCount() > v.visibles.size()) lista.removeViewAt(lista.getChildCount() - 1);
+        while (lista.getChildCount() < v.visibles.size()) {
+            lista.addView(inflater.inflate(R.layout.item_transferencia, lista, false));
+        }
+        for (int i = 0; i < v.visibles.size(); i++) {
+            TransferenciaResponse t = v.visibles.get(i).transferencia;
+            View fila = lista.getChildAt(i);
+            FilaTransferenciaVista.bind(fila, t);
+            fila.setOnClickListener(x -> detalleSheet.abrir(t));
+        }
+    }
+
+    private void abrirMovimientos() {
+        startActivity(new Intent(this, MovimientosActivity.class));
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (detalleSheet != null) detalleSheet.cerrar();
     }
 
     private void mostrarAvatarMenu() {
@@ -614,7 +652,7 @@ public class HomeActivity extends AppCompatActivity {
                 else if (position == POS_DOLARES) abrirTransferencia("USD");
                 else abrirTransferenciaCripto();
             });
-            holder.btnVerMovimientos.setOnClickListener(v -> mostrarProximamente());
+            holder.btnVerMovimientos.setOnClickListener(v -> abrirMovimientos());
             holder.btnOjo.setOnClickListener(v -> {
                 saldoVisible = !saldoVisible;
                 // Ocultar/mostrar no anima: cambia en el momento en todas las pestañas

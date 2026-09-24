@@ -105,7 +105,7 @@ public class TransferenciaActivity extends AppCompatActivity {
             tvCvuDestino, tvMotivoConfirmar, tvTipoEnvio, tvAvisoPendienteConfirmar, tvErrorConfirmar,
             tvTituloExito, tvTextoExito, tvAvisoExito;
     private ImageView ivIconoAhora, ivIconoPendiente, ivIconoExito;
-    private Button btnContinuar, btnConfirmar, btnEditar, btnVerMisTransferencias;
+    private Button btnContinuar, btnConfirmar, btnEditar, btnVerMisMovimientos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -244,7 +244,7 @@ public class TransferenciaActivity extends AppCompatActivity {
         btnContinuar = findViewById(R.id.btnContinuar);
         btnConfirmar = findViewById(R.id.btnConfirmar);
         btnEditar = findViewById(R.id.btnEditar);
-        btnVerMisTransferencias = findViewById(R.id.btnVerMisTransferencias);
+        btnVerMisMovimientos = findViewById(R.id.btnVerMisMovimientos);
     }
 
     private void configurarCampos() {
@@ -302,8 +302,8 @@ public class TransferenciaActivity extends AppCompatActivity {
         });
         btnConfirmar.setOnClickListener(v -> envio.confirmar());
         btnEditar.setOnClickListener(v -> envio.editar());
-        btnVerMisTransferencias.setOnClickListener(v -> {
-            startActivity(new Intent(this, MisTransferenciasActivity.class));
+        btnVerMisMovimientos.setOnClickListener(v -> {
+            startActivity(new Intent(this, MovimientosActivity.class));
             finish();
         });
         findViewById(R.id.btnListo).setOnClickListener(v -> finish());
@@ -470,7 +470,7 @@ public class TransferenciaActivity extends AppCompatActivity {
         // Resultado incierto: nada de reintentar desde acá, se revisa el listado
         btnConfirmar.setVisibility(incierto ? View.GONE : View.VISIBLE);
         btnEditar.setVisibility(incierto ? View.GONE : View.VISIBLE);
-        btnVerMisTransferencias.setVisibility(incierto ? View.VISIBLE : View.GONE);
+        btnVerMisMovimientos.setVisibility(incierto ? View.VISIBLE : View.GONE);
         btnConfirmar.setEnabled(!envio.isEnviando());
         btnEditar.setEnabled(!envio.isEnviando());
         btnConfirmar.setText(envio.isEnviando() ? "Procesando..."

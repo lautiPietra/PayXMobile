@@ -361,16 +361,52 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:paddingVertical="40dp">
+                    android:orientation="vertical">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <!-- Cargando / error / vacío real (nunca "no tenés movimientos" si no se pudo cargar) -->
+                    <LinearLayout
+                        android:id="@+id/layoutEstadoActividades"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Todavía no tenés movimientos"
-                        android:textColor="@color/text_hint"
-                        android:textSize="13sp" />
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingVertical="32dp">
+
+                        <ProgressBar
+                            android:id="@+id/progressActividades"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginBottom="8dp"
+                            android:indeterminateTint="@color/payx_orange" />
+
+                        <TextView
+                            android:id="@+id/tvEstadoActividades"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:paddingHorizontal="20dp"
+                            android:textColor="@color/text_hint"
+                            android:textSize="13sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnReintentarActividades"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Reintentar"
+                            android:textAllCaps="false"
+                            android:textColor="@color/payx_orange"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
+                    <!-- Las 4 más recientes (misma fila que en "Mis movimientos") -->
+                    <LinearLayout
+                        android:id="@+id/layoutActividades"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="8dp"
+                        android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

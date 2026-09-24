@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.payxmobile.R;
+import com.example.payxmobile.utils.NavegacionInferior;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class InversionesActivity extends AppCompatActivity {
@@ -60,26 +61,6 @@ public class InversionesActivity extends AppCompatActivity {
 
     private void configurarBottomNav() {
         bottomNav = findViewById(R.id.bottomNav);
-        bottomNav.setSelectedItemId(R.id.nav_inversiones);
-
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_inversiones) {
-                return true;
-            } else if (id == R.id.nav_inicio) {
-                finish();
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                return false;
-            } else if (id == R.id.nav_actividad) {
-                startActivity(new Intent(this, MovimientosActivity.class));
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                return false;
-            } else if (id == R.id.nav_perfil) {
-                startActivity(new Intent(this, PerfilActivity.class));
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                return false;
-            }
-            return false;
-        });
+        NavegacionInferior.configurar(this, bottomNav, R.id.nav_inversiones);
     }
 }

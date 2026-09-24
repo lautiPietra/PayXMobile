@@ -103,8 +103,8 @@ public class TransferenciasRepository {
     }
 
     public synchronized Estado getEstado() {
-        return new Estado(lista != null ? Collections.unmodifiableList(new ArrayList<>(lista)) : null,
-                errorPrimeraCarga, desactualizado, enVuelo);
+        // Misma instancia inmutable hasta que la lista cambie: las pantallas detectan "no cambió nada"
+        return new Estado(lista, errorPrimeraCarga, desactualizado, enVuelo);
     }
 
     private void notificar() {
@@ -164,7 +164,9 @@ public class TransferenciasRepository {
             cambiosLocales++;
             for (int i = 0; i < lista.size(); i++) {
                 if (lista.get(i).getId().equals(nueva.getId())) {
-                    lista.set(i, nueva);
+                    List<TransferenciaResponse> copia = new ArrayList<>(lista);
+                    copia.set(i, nueva);
+                    lista = Collections.unmodifiableList(copia);
                     break;
                 }
             }
@@ -199,7 +201,7 @@ public class TransferenciasRepository {
                 synchronized (TransferenciasRepository.this) {
                     if (gen != generacion) return;
                     if (response.isSuccessful() && response.body() != null) {
-                        lista = new ArrayList<>(response.body());
+                        lista = Collections.unmodifiableList(new ArrayList<>(response.body()));
                         errorPrimeraCarga = null;
                         desactualizado = false;
                     } else {

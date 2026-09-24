@@ -594,9 +594,9 @@
 
             <!-- No sabemos si se creó: en vez de reintentar, mandamos a revisar el listado -->
             <Button
-                android:id="@+id/btnVerMisTransferencias"
+                android:id="@+id/btnVerMisMovimientos"
                 style="@style/TransferBotonPrincipal"
-                android:text="Ver mis transferencias"
+                android:text="Ver mis movimientos"
                 android:visibility="gone" />
         </LinearLayout>
 

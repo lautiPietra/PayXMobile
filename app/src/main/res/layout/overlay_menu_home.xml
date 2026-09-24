@@ -130,15 +130,6 @@
                     <TextView style="@style/MenuLateralLabel" android:text="Movimientos" />
                 </LinearLayout>
 
-                <LinearLayout android:id="@+id/itemMisTransferencias" style="@style/MenuLateralItem">
-                    <ImageView
-                        style="@style/MenuLateralIconWrap"
-                        android:background="@drawable/bg_menu_icon_neutral"
-                        android:src="@drawable/ic_send"
-                        app:tint="@color/payx_orange" />
-                    <TextView style="@style/MenuLateralLabel" android:text="Mis transferencias" />
-                </LinearLayout>
-
                 <LinearLayout android:id="@+id/itemPlazoFijo" style="@style/MenuLateralItem">
                     <ImageView
                         style="@style/MenuLateralIconWrap"
