@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Panel de notificaciones (como el de Navbar.jsx). Estados separados: cargando, error de
+     primera carga, vacía (solo tras una carga OK con 0) y lista. -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -13,7 +15,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingTop="48dp"
-        android:paddingBottom="16dp"
+        android:paddingBottom="8dp"
         android:paddingHorizontal="20dp">
 
         <ImageView
@@ -22,6 +24,7 @@
             android:layout_height="36dp"
             android:src="@drawable/ic_back"
             android:background="@drawable/bg_action_button"
+            android:contentDescription="Volver"
             android:padding="9dp"
             android:layout_marginEnd="14dp" />
 
@@ -33,17 +36,34 @@
             android:textColor="#FFFFFF"
             android:textSize="20sp"
             android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/btnMarcarLeidas"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Marcar leídas"
-            android:textColor="#E85500"
-            android:textSize="12sp"
-            android:visibility="gone" />
-
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/btnMarcarLeidas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginEnd="12dp"
+        android:background="?attr/selectableItemBackground"
+        android:padding="8dp"
+        android:text="Marcar todas como leídas"
+        android:textColor="@color/payx_orange"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <!-- Aviso: no se pudo marcar como leídas / lista desactualizada -->
+    <TextView
+        android:id="@+id/tvAviso"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_error_box"
+        android:padding="12dp"
+        android:textColor="@color/text_primary"
+        android:textSize="12.5sp"
+        android:visibility="gone" />
 
     <!-- Divider -->
     <View
@@ -51,31 +71,71 @@
         android:layout_height="1dp"
         android:background="#1E1E1E" />
 
-    <!-- Lista -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerNotificaciones"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingTop="8dp"
-        android:clipToPadding="false"
-        android:visibility="gone" />
+        android:layout_height="match_parent">
 
-    <!-- Empty state -->
-    <LinearLayout
-        android:id="@+id/emptyState"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:visibility="visible">
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerNotificaciones"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="8dp"
+            android:clipToPadding="false"
+            android:visibility="gone" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Sin notificaciones"
-            android:textColor="#444444"
-            android:textSize="15sp" />
+        <ProgressBar
+            android:id="@+id/progreso"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/payx_orange" />
 
-    </LinearLayout>
+        <!-- Error de primera carga: nunca se muestra como "no tenés notificaciones" -->
+        <LinearLayout
+            android:id="@+id/estadoError"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="32dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvError"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:gravity="center"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/btnReintentar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:padding="8dp"
+                android:text="Reintentar"
+                android:textColor="@color/payx_orange"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/emptyState"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No tenés notificaciones nuevas"
+                android:textColor="@color/text_secondary"
+                android:textSize="15sp" />
+        </LinearLayout>
+    </FrameLayout>
 
 </LinearLayout>

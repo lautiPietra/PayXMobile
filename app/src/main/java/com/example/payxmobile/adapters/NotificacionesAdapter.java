@@ -10,17 +10,24 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.payxmobile.R;
 import com.example.payxmobile.model.NotificacionResponse;
+import com.example.payxmobile.notificaciones.TitulosNotificacion;
 import com.example.payxmobile.utils.FormatoFecha;
 
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.List;
 
+/** Fila: título corto según el código (genérico si no se conoce) + "mensaje" TAL CUAL + hora corta. */
 public class NotificacionesAdapter extends RecyclerView.Adapter<NotificacionesAdapter.ViewHolder> {
 
-    private final List<NotificacionResponse> items;
+    private List<NotificacionResponse> items = Collections.emptyList();
 
-    public NotificacionesAdapter(List<NotificacionResponse> items) {
-        this.items = items;
+    /** La lista del repositorio es inmutable: si es la misma instancia no cambió nada. */
+    public void setItems(List<NotificacionResponse> nuevos) {
+        List<NotificacionResponse> lista = nuevos != null ? nuevos : Collections.emptyList();
+        if (lista == items) return;
+        items = lista;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -34,9 +41,12 @@ public class NotificacionesAdapter extends RecyclerView.Adapter<NotificacionesAd
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         NotificacionResponse notif = items.get(position);
+        holder.tvTitulo.setText(TitulosNotificacion.de(notif.getPlantillaCodigo()));
         holder.tvMensaje.setText(notif.getMensaje());
-        holder.tvFecha.setText(formatearFecha(notif.getFecha()));
-        holder.badgeNoLeida.setVisibility(notif.isLeida() ? View.GONE : View.VISIBLE);
+        // El backend manda UTC con microsegundos ("...T20:53:07.815346Z"): se muestra en hora local
+        String hora = FormatoFecha.corta(notif.getFecha(), ZoneId.systemDefault());
+        holder.tvFecha.setText(hora);
+        holder.tvFecha.setVisibility(hora.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     @Override
@@ -44,20 +54,14 @@ public class NotificacionesAdapter extends RecyclerView.Adapter<NotificacionesAd
         return items.size();
     }
 
-    // El backend manda "2026-09-24T20:53:07.815346Z" (UTC con microsegundos): se muestra en hora local
-    private String formatearFecha(String fechaIso) {
-        return FormatoFecha.fechaHora(fechaIso, ZoneId.systemDefault());
-    }
-
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvMensaje, tvFecha;
-        View badgeNoLeida;
+        final TextView tvTitulo, tvMensaje, tvFecha;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
+            tvTitulo = itemView.findViewById(R.id.tvTituloNotif);
             tvMensaje = itemView.findViewById(R.id.tvMensajeNotif);
             tvFecha = itemView.findViewById(R.id.tvFechaNotif);
-            badgeNoLeida = itemView.findViewById(R.id.badgeNoLeida);
         }
     }
 }

@@ -366,4 +366,78 @@ public class SaldosRepositoryTest {
         esperarQuieto();
         assertEquals(new BigDecimal("10.00"), repo.getEstado().perfil.getSaldoPesos());
     }
+
+    // ── Cripto: auto-refresco compartido entre pantallas y 503 ───────────────
+
+    @Test
+    public void autoRefrescoCompartidoVolverDeCriptoNoCortaElDeInicio() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            responder(PERFIL, perfil("5000.00"));
+            responder(COTIZ, new MockResponse().setBody(COTIZACIONES_OK));
+        }
+        repo.iniciarAutoRefresco();   // Inicio onStart
+        esperarQuieto();
+        repo.iniciarAutoRefresco();   // Comprar cripto onStart (Inicio queda debajo)
+        // Al volver: Inicio onStart ANTES del onStop de la pantalla de cripto
+        repo.iniciarAutoRefresco();
+        repo.detenerAutoRefresco();
+        repo.detenerAutoRefresco();   // sigue Inicio en primer plano
+        assertEquals("los timers siguen", 2, reloj.pendientes());
+        int antes = pedidosA(PERFIL);
+        reloj.avanzar(SaldosRepository.INTERVALO_SALDO_MS);
+        esperarQuieto();
+        assertEquals(antes + 1, pedidosA(PERFIL));
+        repo.detenerAutoRefresco();   // Inicio onStop
+        assertEquals(0, reloj.pendientes());
+    }
+
+    @Test
+    public void cotizaciones503MarcaSinCotizacionesPeroElTickerConservaLasUltimas() throws Exception {
+        responder(COTIZ, new MockResponse().setBody(COTIZACIONES_OK));
+        repo.refrescarCotizaciones();
+        esperarQuieto();
+        assertFalse(repo.getEstado().sinCotizacionesEnBackend);
+        responder(COTIZ, new MockResponse().setResponseCode(503));
+        repo.refrescarCotizaciones();
+        esperarQuieto();
+        assertTrue("para operar no hay precio", repo.getEstado().sinCotizacionesEnBackend);
+        assertEquals("el ticker de Inicio sigue", new BigDecimal("127818114"), repo.getEstado().precio("BTC"));
+        responder(COTIZ, new MockResponse().setResponseCode(429));
+        repo.refrescarCotizaciones();
+        esperarQuieto();
+        assertTrue("un 429 no cambia lo que se sabe", repo.getEstado().sinCotizacionesEnBackend);
+        responder(COTIZ, new MockResponse().setBody(COTIZACIONES_OK));
+        repo.refrescarCotizaciones();
+        esperarQuieto();
+        assertFalse(repo.getEstado().sinCotizacionesEnBackend);
+    }
+
+    @Test
+    public void cotizacionesRapidasCada3sMientrasSePidenYDespuesVuelvenA20s() throws Exception {
+        for (int i = 0; i < 30; i++) {
+            responder(PERFIL, perfil("5000.00"));
+            responder(COTIZ, new MockResponse().setBody(COTIZACIONES_OK));
+        }
+        repo.iniciarAutoRefresco();
+        esperarQuieto();
+        assertEquals(1, pedidosA(COTIZ));
+        repo.iniciarCotizacionesRapidas(); // se abre "Comprar cripto"
+        for (int i = 2; i <= 4; i++) {
+            reloj.avanzar(SaldosRepository.INTERVALO_COTIZACIONES_RAPIDO_MS);
+            esperarQuieto();
+            assertEquals("cada 3 s", i, pedidosA(COTIZ));
+        }
+        // 20 pedidos por minuto como máximo: dentro del límite de 30/min del backend
+        assertTrue(60_000 / SaldosRepository.INTERVALO_COTIZACIONES_RAPIDO_MS <= 20);
+
+        repo.detenerCotizacionesRapidas(); // se cierra
+        int antes = pedidosA(COTIZ);
+        reloj.avanzar(SaldosRepository.INTERVALO_COTIZACIONES_RAPIDO_MS * 3);
+        esperarQuieto();
+        assertEquals("ya no cada 3 s", antes, pedidosA(COTIZ));
+        reloj.avanzar(SaldosRepository.INTERVALO_COTIZACIONES_MS);
+        esperarQuieto();
+        assertEquals("vuelve a 20 s", antes + 1, pedidosA(COTIZ));
+        assertEquals("un timer de saldo y uno de cotizaciones", 2, reloj.pendientes());
+    }
 }

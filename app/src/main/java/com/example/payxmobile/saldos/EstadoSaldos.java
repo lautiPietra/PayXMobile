@@ -25,10 +25,23 @@ public final class EstadoSaldos {
     public final boolean cargandoCotizaciones;
     /** El backend respondió 403 al pedir el perfil: token inválido/vencido o cuenta desactivada. */
     public final boolean sesionInvalida;
+    /**
+     * El último GET de cotizaciones cripto respondió 503: el backend no tiene NINGUNA. El ticker de
+     * Inicio sigue mostrando las últimas conocidas, pero para operar no hay precio (sin preview).
+     */
+    public final boolean sinCotizacionesEnBackend;
 
     EstadoSaldos(PerfilResponse perfil, String errorPrimeraCarga, boolean desactualizado,
                  Map<String, CotizacionCripto> cotizaciones, boolean cargandoSaldo,
                  boolean cargandoCotizaciones, boolean sesionInvalida) {
+        this(perfil, errorPrimeraCarga, desactualizado, cotizaciones, cargandoSaldo, cargandoCotizaciones,
+                sesionInvalida, false);
+    }
+
+    EstadoSaldos(PerfilResponse perfil, String errorPrimeraCarga, boolean desactualizado,
+                 Map<String, CotizacionCripto> cotizaciones, boolean cargandoSaldo,
+                 boolean cargandoCotizaciones, boolean sesionInvalida, boolean sinCotizacionesEnBackend) {
+        this.sinCotizacionesEnBackend = sinCotizacionesEnBackend;
         this.perfil = perfil;
         this.errorPrimeraCarga = errorPrimeraCarga;
         this.desactualizado = desactualizado;

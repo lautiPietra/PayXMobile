@@ -64,6 +64,13 @@
                 android:padding="9dp" />
         </LinearLayout>
 
+        <!-- ══════ FORMULARIO ══════ -->
+        <LinearLayout
+            android:id="@+id/seccionFormulario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
         <!-- ══ COTIZACIÓN EN VIVO ══ -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -119,7 +126,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="$ 1.485,00"
+                        android:text="—"
                         android:textColor="@color/color_positivo"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -143,12 +150,22 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="$ 1.535,00"
+                        android:text="—"
                         android:textColor="@color/color_negativo"
                         android:textSize="16sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
+
+            <!-- Buscando / sin poder actualizar / error -->
+            <TextView
+                android:id="@+id/tvEstadoCotizacion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:visibility="gone" />
         </LinearLayout>
 
         <!-- ══ TÍTULO ══ -->
@@ -261,7 +278,7 @@
                     android:id="@+id/tvCotizacion"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="$ 1.535,00"
+                    android:text="—"
                     android:textColor="@color/text_secondary"
                     android:textSize="12.5sp" />
             </LinearLayout>
@@ -285,7 +302,7 @@
                     android:id="@+id/tvSaldoOrigen"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="$ 97.567.742,00"
+                    android:text="—"
                     android:textColor="@color/text_secondary"
                     android:textSize="12.5sp" />
             </LinearLayout>
@@ -308,7 +325,7 @@
                     android:id="@+id/tvSaldoLuego"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="$ 97.567.742,00"
+                    android:text="—"
                     android:textColor="@color/text_primary"
                     android:textSize="12.5sp"
                     android:textStyle="bold" />
@@ -347,7 +364,7 @@
                 android:id="@+id/tvSaldoDisponible"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="$ 97.567.742,00"
+                android:text="—"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -439,6 +456,11 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/tvError"
+            style="@style/TransferError"
+            android:visibility="gone" />
+
         <!-- ══ BOTONES ══ -->
         <Button
             android:id="@+id/btnOperar"
@@ -470,6 +492,142 @@
             android:textColor="@color/text_secondary"
             android:textSize="15sp"
             android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- ══════ CONFIRMAR: resumen antes de mover plata ══════ -->
+        <LinearLayout
+            android:id="@+id/seccionConfirmar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvTituloConfirmar"
+                style="@style/TransferTitulo"
+                android:text="Confirmá la compra" />
+
+            <TextView
+                style="@style/TransferSubtitulo"
+                android:text="Revisá que los datos sean correctos antes de confirmar" />
+
+            <TextView
+                android:id="@+id/tvLabelMontoConfirmar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvMontoConfirmar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/text_primary"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_input_dark"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <LinearLayout style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="Recibís (aprox.)" />
+                    <TextView
+                        android:id="@+id/tvRecibisConfirmar"
+                        style="@style/TransferFilaValor"
+                        android:textColor="@color/color_positivo"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="Cotización" />
+                    <TextView android:id="@+id/tvCotizacionConfirmar" style="@style/TransferFilaValor" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="Saldo luego de la operación" />
+                    <TextView android:id="@+id/tvSaldoLuegoConfirmar" style="@style/TransferFilaValor" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="20dp"
+                android:gravity="center"
+                android:lineSpacingExtra="2dp"
+                android:text="El monto final se calcula con la cotización vigente al momento de confirmar."
+                android:textColor="@color/text_hint"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvErrorConfirmar"
+                style="@style/TransferError"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btnConfirmar"
+                style="@style/TransferBotonPrincipal"
+                android:text="Confirmar compra" />
+
+            <Button
+                android:id="@+id/btnModificar"
+                style="@style/TransferBotonSecundario"
+                android:text="Modificar" />
+        </LinearLayout>
+
+        <!-- ══════ RESULTADO: éxito (montos REALES del backend) o incierto ══════ -->
+        <LinearLayout
+            android:id="@+id/seccionResultado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingTop="24dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/ivIconoResultado"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/bg_icon_badge_dolares"
+                android:importantForAccessibility="no"
+                android:padding="18dp"
+                android:src="@drawable/ic_check"
+                app:tint="@color/color_positivo" />
+
+            <TextView
+                android:id="@+id/tvTituloResultado"
+                style="@style/TransferTitulo" />
+
+            <TextView
+                android:id="@+id/tvTextoResultado"
+                style="@style/TransferSubtitulo"
+                android:layout_marginBottom="8dp"
+                android:lineSpacingExtra="3dp"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/tvDetalleResultado"
+                style="@style/TransferSubtitulo"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnListo"
+                style="@style/TransferBotonPrincipal"
+                android:text="Listo" />
+        </LinearLayout>
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

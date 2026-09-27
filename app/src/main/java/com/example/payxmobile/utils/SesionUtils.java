@@ -10,6 +10,10 @@ import androidx.credentials.CredentialManagerCallback;
 import androidx.credentials.exceptions.ClearCredentialException;
 
 import com.example.payxmobile.activities.LoginActivity;
+import com.example.payxmobile.cripto.CambiosCriptoRepository;
+import com.example.payxmobile.dolares.CambiosDolaresRepository;
+import com.example.payxmobile.dolares.CotizacionDolarRepository;
+import com.example.payxmobile.notificaciones.NotificacionesRepository;
 import com.example.payxmobile.saldos.SaldosRepository;
 import com.example.payxmobile.transferencias.TransferenciasRepository;
 
@@ -44,6 +48,10 @@ public final class SesionUtils {
         // Que la próxima cuenta no vea ni un instante los saldos de esta
         SaldosRepository.get(app).limpiar();
         TransferenciasRepository.get(app).limpiar();
+        NotificacionesRepository.get(app).limpiar();
+        CambiosDolaresRepository.get(app).limpiar();
+        CambiosCriptoRepository.get(app).limpiar();
+        CotizacionDolarRepository.get(app).limpiar();
 
         // Olvida la cuenta de Google elegida: el próximo login vuelve a mostrar el selector
         CredentialManager.create(app).clearCredentialStateAsync(

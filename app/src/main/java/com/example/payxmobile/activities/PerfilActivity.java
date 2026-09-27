@@ -20,6 +20,7 @@ import com.example.payxmobile.model.ActualizarPerfilRequest;
 import com.example.payxmobile.model.PerfilResponse;
 import com.example.payxmobile.network.ApiErrores;
 import com.example.payxmobile.network.RetrofitClient;
+import com.example.payxmobile.notificaciones.ui.CampanaNotificaciones;
 import com.example.payxmobile.utils.Avatar;
 import com.example.payxmobile.utils.CamposUi;
 import com.example.payxmobile.utils.ImagenPerfil;
@@ -66,6 +67,7 @@ public class PerfilActivity extends AppCompatActivity {
         setContentView(R.layout.activity_perfil);
 
         sessionManager = new SessionManager(this);
+        CampanaNotificaciones.en(this);
 
         tvInicialHeader = findViewById(R.id.tvInicialHeader);
         tvNombreHeader = findViewById(R.id.tvNombreHeader);

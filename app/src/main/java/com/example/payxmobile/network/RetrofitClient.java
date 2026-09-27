@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
+import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -26,6 +27,9 @@ public class RetrofitClient {
 
     private static ApiService apiService;
     private static ApiService apiServiceSinReintentos;
+    // Un solo pool para los dos clientes de la app: el POST (sin reintentos) reusa la conexión ya
+    // abierta por los GET del polling en vez de abrir una nueva (en Wi-Fi eso es lo que más tarda).
+    private static final ConnectionPool POOL_APP = new ConnectionPool();
 
     private RetrofitClient() {}
 
@@ -53,7 +57,8 @@ public class RetrofitClient {
                 System::currentTimeMillis,
                 () -> main.post(() -> SesionUtils.sesionVencida(appContext)),
                 BuildConfig.DEBUG,
-                reintentar);
+                reintentar,
+                POOL_APP);
     }
 
     /**
@@ -71,6 +76,13 @@ public class RetrofitClient {
     /** @param reintentar false = sin retryOnConnectionFailure (requests sin idempotencia). */
     public static ApiService crear(String baseUrl, Supplier<String> tokenProvider, LongSupplier reloj,
                                    Runnable onSesionVencida, boolean debug, boolean reintentar) {
+        return crear(baseUrl, tokenProvider, reloj, onSesionVencida, debug, reintentar, null);
+    }
+
+    /** @param pool pool de conexiones compartido (null = uno propio). */
+    static ApiService crear(String baseUrl, Supplier<String> tokenProvider, LongSupplier reloj,
+                                   Runnable onSesionVencida, boolean debug, boolean reintentar,
+                                   ConnectionPool pool) {
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .retryOnConnectionFailure(reintentar)
                 .connectTimeout(15, TimeUnit.SECONDS)
@@ -90,6 +102,10 @@ public class RetrofitClient {
                     }
                     return response;
                 });
+
+        // Antes de mandar un POST por una conexión reusada, OkHttp verifica que siga viva (chequeo
+        // extensivo para todo lo que no es GET): no se manda la compra por un socket muerto.
+        if (pool != null) builder.connectionPool(pool);
 
         if (debug) {
             // BASIC: solo método, URL, código y duración. Nunca headers (Authorization) ni bodies

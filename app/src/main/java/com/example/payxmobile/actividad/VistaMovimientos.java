@@ -25,8 +25,8 @@ public final class VistaMovimientos {
     public static final String MSG_VACIO = "Todavía no tenés movimientos";
     public static final String MSG_RANGO_INVALIDO = "La fecha \"Desde\" no puede ser posterior a \"Hasta\".";
     public static final String MSG_SIN_RESULTADOS = "No hay movimientos en ese rango de fechas.";
-    public static final String MSG_SIN_RESULTADOS_MONEDA = "No hay transferencias en esa moneda.";
-    public static final String MSG_SIN_RESULTADOS_MONEDA_Y_FECHA = "No hay transferencias en esa moneda en ese rango de fechas.";
+    public static final String MSG_SIN_RESULTADOS_MONEDA = "No hay movimientos en esa moneda.";
+    public static final String MSG_SIN_RESULTADOS_MONEDA_Y_FECHA = "No hay movimientos en esa moneda en ese rango de fechas.";
     public static final String MSG_TOPE = "Tenés muchísimas transferencias: se muestran las 2.000 más recientes.";
 
     public final Modo modo;
@@ -135,7 +135,13 @@ public final class VistaMovimientos {
 
     /** Inicio: las 4 más recientes, sin filtros. */
     public static VistaMovimientos inicio(TransferenciasRepository.Estado estado) {
-        VistaMovimientos v = de(estado, null, null, 1, ZoneId.of("UTC")); // el día no importa sin filtros
+        return inicio(estado, null);
+    }
+
+    /** Inicio con el feed ya construido (transferencias + dólares). */
+    public static VistaMovimientos inicio(TransferenciasRepository.Estado estado, List<Actividad> construidas) {
+        // el día no importa sin filtros
+        VistaMovimientos v = de(estado, construidas, null, null, FiltroMoneda.TODAS, 1, ZoneId.of("UTC"));
         if (v.modo != Modo.LISTA) return v;
         List<Actividad> cuatro = v.visibles.subList(0, Math.min(Actividades.CANTIDAD_INICIO, v.visibles.size()));
         return new VistaMovimientos(Modo.LISTA, null, v.desactualizado, false, false, false, null, null, null,

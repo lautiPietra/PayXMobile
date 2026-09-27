@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Campana de notificaciones con badge "sin leer". La maneja CampanaNotificaciones. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="42dp"
+    android:layout_height="42dp">
+
+    <ImageView
+        android:id="@+id/btnNotificaciones"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:layout_gravity="bottom|start"
+        android:background="@drawable/bg_action_button"
+        android:contentDescription="Notificaciones"
+        android:padding="9dp"
+        android:src="@drawable/ic_notifications" />
+
+    <TextView
+        android:id="@+id/badgeNotificaciones"
+        android:layout_width="wrap_content"
+        android:layout_height="18dp"
+        android:layout_gravity="top|end"
+        android:background="@drawable/bg_badge_contador"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:includeFontPadding="false"
+        android:minWidth="18dp"
+        android:paddingHorizontal="4dp"
+        android:textColor="#FFFFFF"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+</FrameLayout>

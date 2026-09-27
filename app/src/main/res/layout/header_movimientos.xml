@@ -41,6 +41,16 @@
                 android:textSize="15sp"
                 android:textStyle="bold" />
         </LinearLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <include
+            layout="@layout/include_campana"
+            android:layout_width="42dp"
+            android:layout_height="42dp" />
     </LinearLayout>
 
     <TextView
@@ -53,13 +63,13 @@
         android:textSize="24sp"
         android:textStyle="bold" />
 
-    <!-- Hoy solo transferencias; se amplía cuando existan los otros tipos -->
+    <!-- Transferencias y compras/ventas de dólares y cripto; se amplía cuando existan los otros tipos -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="20dp"
         android:layout_marginBottom="16dp"
-        android:text="Transferencias"
+        android:text="Transferencias y compra/venta de dólares y cripto"
         android:textColor="@color/text_secondary"
         android:textSize="13.5sp" />
 

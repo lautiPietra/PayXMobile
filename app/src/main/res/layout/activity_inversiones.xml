@@ -60,9 +60,10 @@
                             android:src="@drawable/payx_logo2" />
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="36dp"
-                        android:layout_height="36dp" />
+                    <include
+                        layout="@layout/include_campana"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp" />
                 </LinearLayout>
 
                 <TextView

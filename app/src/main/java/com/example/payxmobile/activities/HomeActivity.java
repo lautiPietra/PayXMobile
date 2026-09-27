@@ -30,9 +30,18 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.example.payxmobile.R;
 import com.example.payxmobile.actividad.VistaMovimientos;
 import com.example.payxmobile.model.PerfilResponse;
-import com.example.payxmobile.model.SinLeerResponse;
+import com.example.payxmobile.notificaciones.ui.CampanaNotificaciones;
+import com.example.payxmobile.actividad.Actividad;
+import com.example.payxmobile.actividad.FeedCombinado;
+import com.example.payxmobile.actividad.ListaRemota;
+import com.example.payxmobile.cripto.CambiosCriptoRepository;
+import com.example.payxmobile.cripto.ui.FilaCambioCriptoVista;
+import com.example.payxmobile.model.OperacionCriptoResponse;
+import com.example.payxmobile.dolares.CambiosDolaresRepository;
+import com.example.payxmobile.dolares.CotizacionDolarRepository;
+import com.example.payxmobile.dolares.ui.FilaCambioDolaresVista;
+import com.example.payxmobile.model.OperacionCambioResponse;
 import com.example.payxmobile.model.TransferenciaResponse;
-import com.example.payxmobile.network.RetrofitClient;
 import com.example.payxmobile.saldos.EstadoSaldos;
 import com.example.payxmobile.saldos.SaldosRepository;
 import com.example.payxmobile.saldos.VistaSaldo;
@@ -47,10 +56,8 @@ import com.example.payxmobile.utils.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.math.BigDecimal;
+import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -59,7 +66,6 @@ public class HomeActivity extends AppCompatActivity {
     private static final int POS_CRIPTO = 2;
 
     private SessionManager sessionManager;
-    private View badgeNotificaciones;
 
     private TextView tabPesos, tabDolares, tabCripto;
     private View dot0, dot1, dot2;
@@ -85,7 +91,25 @@ public class HomeActivity extends AppCompatActivity {
 
     // Últimas actividades: mismo repositorio (y mismo polling) que "Mis movimientos"
     private TransferenciasRepository transferenciasRepo;
-    private final TransferenciasRepository.Observador observadorActividades = this::onActividades;
+    private final TransferenciasRepository.Observador observadorActividades = e -> {
+        estadoTransferencias = e;
+        onActividades();
+    };
+    private TransferenciasRepository.Estado estadoTransferencias;
+    // Compras/ventas de dólares y de cripto: se suman a "Últimas actividades"
+    private ListaRemota<OperacionCambioResponse> cambiosRepo;
+    private ListaRemota<OperacionCriptoResponse> criptoRepo;
+    private final ListaRemota.Observador<OperacionCambioResponse> observadorCambios = e -> {
+        cambios = e.lista;
+        onActividades();
+    };
+    private final ListaRemota.Observador<OperacionCriptoResponse> observadorCripto = e -> {
+        operacionesCripto = e.lista;
+        onActividades();
+    };
+    private List<OperacionCambioResponse> cambios;
+    private List<OperacionCriptoResponse> operacionesCripto;
+    private final FeedCombinado feedCombinado = new FeedCombinado();
     private DetalleTransferenciaSheet detalleSheet;
 
     @Override
@@ -111,6 +135,8 @@ public class HomeActivity extends AppCompatActivity {
         }
         saldosRepository = SaldosRepository.get(this);
         transferenciasRepo = TransferenciasRepository.get(this);
+        cambiosRepo = CambiosDolaresRepository.get(this);
+        criptoRepo = CambiosCriptoRepository.get(this);
         detalleSheet = new DetalleTransferenciaSheet(this);
         swipeRefresh = findViewById(R.id.swipeRefresh);
         swipeRefresh.setColorSchemeResources(R.color.payx_orange);
@@ -118,10 +144,11 @@ public class HomeActivity extends AppCompatActivity {
             pullEnCurso = true;
             saldosRepository.refrescarTodo();
             transferenciasRepo.refrescar();
+            cambiosRepo.refrescar();
+            criptoRepo.refrescar();
             onEstadoSaldos(saldosRepository.getEstado());
         });
 
-        badgeNotificaciones = findViewById(R.id.badgeNotificaciones);
         tabPesos = findViewById(R.id.tabPesos);
         tabDolares = findViewById(R.id.tabDolares);
         tabCripto = findViewById(R.id.tabCripto);
@@ -139,10 +166,7 @@ public class HomeActivity extends AppCompatActivity {
         configurarAccionesHome();
         configurarMenuLateral();
 
-        findViewById(R.id.btnNotificaciones).setOnClickListener(v -> {
-            startActivity(new Intent(this, NotificacionesActivity.class));
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-        });
+        CampanaNotificaciones.en(this);
 
         findViewById(R.id.btnMenu).setOnClickListener(v -> abrirMenu());
 
@@ -151,7 +175,11 @@ public class HomeActivity extends AppCompatActivity {
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
         findViewById(R.id.tvConsultarTodas).setOnClickListener(v -> abrirMovimientos());
-        findViewById(R.id.btnReintentarActividades).setOnClickListener(v -> transferenciasRepo.refrescar());
+        findViewById(R.id.btnReintentarActividades).setOnClickListener(v -> {
+            transferenciasRepo.refrescar();
+            cambiosRepo.refrescar();
+            criptoRepo.refrescar();
+        });
     }
 
     @Override
@@ -165,7 +193,6 @@ public class HomeActivity extends AppCompatActivity {
         }
         bottomNav.setSelectedItemId(R.id.nav_inicio);
         mostrarAvatarMenu();
-        actualizarBadge();
     }
 
     // Auto-refresco solo en primer plano: arranca (y refresca YA) en onStart, se corta en onStop
@@ -177,6 +204,12 @@ public class HomeActivity extends AppCompatActivity {
         saldosRepository.iniciarAutoRefresco();
         transferenciasRepo.observar(observadorActividades);
         transferenciasRepo.iniciarAutoRefresco();
+        cambiosRepo.observar(observadorCambios);
+        cambiosRepo.iniciarAutoRefresco();
+        criptoRepo.observar(observadorCripto);
+        criptoRepo.iniciarAutoRefresco();
+        // Así "Comprar/Vender dólares" (desde Inversiones) muestra el precio al instante
+        CotizacionDolarRepository.get(this).precargar();
     }
 
     @Override
@@ -187,6 +220,10 @@ public class HomeActivity extends AppCompatActivity {
         saldosRepository.dejarDeObservar(observadorSaldos);
         transferenciasRepo.detenerAutoRefresco();
         transferenciasRepo.dejarDeObservar(observadorActividades);
+        cambiosRepo.detenerAutoRefresco();
+        cambiosRepo.dejarDeObservar(observadorCambios);
+        criptoRepo.detenerAutoRefresco();
+        criptoRepo.dejarDeObservar(observadorCripto);
     }
 
     @Override
@@ -284,24 +321,6 @@ public class HomeActivity extends AppCompatActivity {
 
     private int dpA(int dp) {
         return (int) (dp * getResources().getDisplayMetrics().density);
-    }
-
-    // ── Notificaciones sin leer ──────────────────────────────────────────────
-
-    private void actualizarBadge() {
-        RetrofitClient.getService(this).contarSinLeer()
-                .enqueue(new Callback<SinLeerResponse>() {
-                    @Override
-                    public void onResponse(Call<SinLeerResponse> call, Response<SinLeerResponse> response) {
-                        if (response.isSuccessful() && response.body() != null) {
-                            long cantidad = response.body().getCantidad();
-                            badgeNotificaciones.setVisibility(cantidad > 0 ? View.VISIBLE : View.GONE);
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<SinLeerResponse> call, Throwable t) {}
-                });
     }
 
     // ── Menú lateral (hamburguesa) ────────────────────────────────────────────
@@ -492,9 +511,13 @@ public class HomeActivity extends AppCompatActivity {
 
     // ── Últimas actividades (las 4 más recientes) ───────────────────────────────
 
-    private void onActividades(TransferenciasRepository.Estado estado) {
+    private void onActividades() {
         if (isFinishing()) return;
-        VistaMovimientos v = VistaMovimientos.inicio(estado);
+        TransferenciasRepository.Estado estado = estadoTransferencias;
+        if (estado == null) return;
+        // El feed se arma solo cuando cambia alguna de las listas
+        List<Actividad> feed = feedCombinado.de(estado.lista, cambios, operacionesCripto);
+        VistaMovimientos v = VistaMovimientos.inicio(estado, feed);
         LinearLayout lista = findViewById(R.id.layoutActividades);
         boolean hayFilas = v.modo == VistaMovimientos.Modo.LISTA;
         findViewById(R.id.layoutEstadoActividades).setVisibility(hayFilas ? View.GONE : View.VISIBLE);
@@ -517,8 +540,17 @@ public class HomeActivity extends AppCompatActivity {
             lista.addView(inflater.inflate(R.layout.item_transferencia, lista, false));
         }
         for (int i = 0; i < v.visibles.size(); i++) {
-            TransferenciaResponse t = v.visibles.get(i).transferencia;
+            Actividad a = v.visibles.get(i);
             View fila = lista.getChildAt(i);
+            if (a.cambioCripto != null) {
+                FilaCambioCriptoVista.bind(fila, a.cambioCripto);
+                continue;
+            }
+            if (a.cambioDolares != null) {
+                FilaCambioDolaresVista.bind(fila, a.cambioDolares);
+                continue;
+            }
+            TransferenciaResponse t = a.transferencia;
             FilaTransferenciaVista.bind(fila, t);
             fila.setOnClickListener(x -> detalleSheet.abrir(t));
         }

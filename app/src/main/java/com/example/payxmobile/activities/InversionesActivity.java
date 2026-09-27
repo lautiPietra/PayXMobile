@@ -9,6 +9,8 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.payxmobile.R;
+import com.example.payxmobile.dolares.CotizacionDolarRepository;
+import com.example.payxmobile.notificaciones.ui.CampanaNotificaciones;
 import com.example.payxmobile.utils.NavegacionInferior;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -20,6 +22,7 @@ public class InversionesActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_inversiones);
+        CampanaNotificaciones.en(this);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         configurarBottomNav();
@@ -57,6 +60,8 @@ public class InversionesActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         bottomNav.setSelectedItemId(R.id.nav_inversiones);
+        // Comprar/Vender dólares se abre desde acá: el precio ya está listo al entrar
+        CotizacionDolarRepository.get(this).precargar();
     }
 
     private void configurarBottomNav() {

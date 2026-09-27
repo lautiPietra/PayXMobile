@@ -1,5 +1,7 @@
 package com.example.payxmobile.actividad;
 
+import com.example.payxmobile.model.OperacionCambioResponse;
+import com.example.payxmobile.model.OperacionCriptoResponse;
 import com.example.payxmobile.model.TransferenciaResponse;
 import com.example.payxmobile.transferencias.FormatoTransferencia;
 
@@ -31,20 +33,54 @@ public final class Actividades {
 
     /**
      * Arma el feed ordenado por fecha, más reciente primero. El orden es ESTABLE: en un empate
-     * se respeta el orden de llegada (el del backend). Cuando existan los otros tipos, se suman
-     * como parámetros acá.
+     * se respeta el orden de llegada (el del backend). Cuando existan los otros tipos (plazo fijo,
+     * cripto), se suman como parámetros acá.
      */
     public static List<Actividad> construir(List<TransferenciaResponse> transferencias) {
-        List<Actividad> items = new ArrayList<>(transferencias != null ? transferencias.size() : 0);
+        return construir(transferencias, null);
+    }
+
+    /** Transferencias + compras/ventas de dólares (null = todavía no se cargaron: no suman). */
+    public static List<Actividad> construir(List<TransferenciaResponse> transferencias,
+                                            List<OperacionCambioResponse> cambiosDolares) {
+        return construir(transferencias, cambiosDolares, null);
+    }
+
+    /**
+     * Transferencias + compras/ventas de dólares + compras/ventas de cripto. Cualquier lista null
+     * = todavía no se cargó: no suma (el resto se muestra igual).
+     */
+    public static List<Actividad> construir(List<TransferenciaResponse> transferencias,
+                                            List<OperacionCambioResponse> cambiosDolares,
+                                            List<OperacionCriptoResponse> cambiosCripto) {
+        List<Actividad> items = new ArrayList<>(tam(transferencias) + tam(cambiosDolares) + tam(cambiosCripto));
         if (transferencias != null) {
             for (TransferenciaResponse t : transferencias) {
-                OffsetDateTime f = FormatoTransferencia.parsear(t.getFecha());
-                items.add(Actividad.deTransferencia(t, f != null ? f.toInstant() : Instant.EPOCH));
+                items.add(Actividad.deTransferencia(t, instanteDe(t.getFecha())));
+            }
+        }
+        if (cambiosDolares != null) {
+            for (OperacionCambioResponse c : cambiosDolares) {
+                items.add(Actividad.deCambioDolares(c, instanteDe(c.getFecha())));
+            }
+        }
+        if (cambiosCripto != null) {
+            for (OperacionCriptoResponse c : cambiosCripto) {
+                items.add(Actividad.deCambioCripto(c, instanteDe(c.getFecha())));
             }
         }
         // List.sort es estable (TimSort)
         items.sort(Comparator.comparing((Actividad a) -> a.instante).reversed());
         return items;
+    }
+
+    private static int tam(List<?> l) {
+        return l != null ? l.size() : 0;
+    }
+
+    private static Instant instanteDe(String fechaIso) {
+        OffsetDateTime f = FormatoTransferencia.parsear(fechaIso);
+        return f != null ? f.toInstant() : Instant.EPOCH;
     }
 
     /** Día calendario LOCAL al que pertenece la fecha (23:30 -03:00 del 24 es del 24 en Argentina). */

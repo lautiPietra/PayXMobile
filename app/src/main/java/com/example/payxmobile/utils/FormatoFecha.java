@@ -15,12 +15,19 @@ public final class FormatoFecha {
 
     private static final DateTimeFormatter FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter CORTA = DateTimeFormatter.ofPattern("dd/MM, HH:mm");
 
     private FormatoFecha() {}
 
     public static String fechaHora(String iso, ZoneId zona) {
         ZonedDateTime f = parsear(iso, zona);
         return f == null ? "" : f.format(FECHA_HORA);
+    }
+
+    /** Hora corta de la campana, como formatearHora de Navbar.jsx: "24/09, 17:53". */
+    public static String corta(String iso, ZoneId zona) {
+        ZonedDateTime f = parsear(iso, zona);
+        return f == null ? "" : f.format(CORTA);
     }
 
     public static String fecha(String iso, ZoneId zona) {

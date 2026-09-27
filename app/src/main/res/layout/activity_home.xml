@@ -59,29 +59,11 @@
                         android:textSize="13sp" />
                 </LinearLayout>
 
-                <FrameLayout
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginEnd="10dp">
-
-                    <ImageView
-                        android:id="@+id/btnNotificaciones"
-                        android:layout_width="38dp"
-                        android:layout_height="38dp"
-                        android:background="@drawable/bg_action_button"
-                        android:src="@drawable/ic_notifications"
-                        android:padding="9dp" />
-
-                    <View
-                        android:id="@+id/badgeNotificaciones"
-                        android:layout_width="10dp"
-                        android:layout_height="10dp"
-                        android:layout_gravity="top|end"
-                        android:layout_marginTop="1dp"
-                        android:layout_marginEnd="1dp"
-                        android:background="@drawable/bg_badge_notif"
-                        android:visibility="gone" />
-                </FrameLayout>
+                <include
+                    layout="@layout/include_campana"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:layout_marginEnd="8dp" />
 
                 <ImageView
                     android:id="@+id/btnMenu"

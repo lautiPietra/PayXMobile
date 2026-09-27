@@ -5,6 +5,8 @@ import com.example.payxmobile.model.CambiarPasswordRequest;
 import com.example.payxmobile.model.ConceptoRequest;
 import com.example.payxmobile.model.CotizacionCripto;
 import com.example.payxmobile.model.CotizacionDolar;
+import com.example.payxmobile.model.CrearCambioDolaresRequest;
+import com.example.payxmobile.model.CrearOperacionCriptoRequest;
 import com.example.payxmobile.model.CrearTransferenciaRequest;
 import com.example.payxmobile.model.DestinatarioResponse;
 import com.example.payxmobile.model.GoogleLoginRequest;
@@ -12,6 +14,8 @@ import com.example.payxmobile.model.LoginRequest;
 import com.example.payxmobile.model.LoginResponse;
 import com.example.payxmobile.model.MensajeResponse;
 import com.example.payxmobile.model.NotificacionResponse;
+import com.example.payxmobile.model.OperacionCambioResponse;
+import com.example.payxmobile.model.OperacionCriptoResponse;
 import com.example.payxmobile.model.PerfilResponse;
 import com.example.payxmobile.model.ReenviarCodigoRequest;
 import com.example.payxmobile.model.RegistroRequest;
@@ -102,8 +106,31 @@ public interface ApiService {
     @PATCH("api/transferencias/{id}/cancelar")
     Call<TransferenciaResponse> cancelarTransferencia(@Path("id") String id);
 
+    // { compra, venta, fechaActualizacion, desactualizada }. Cacheada 60 s en el backend, límite 30/min.
+    // COMPRA de dólares usa "venta" (lo que paga el usuario); VENTA usa "compra" (lo que recibe).
     @GET("api/cotizacion/dolar")
     Call<CotizacionDolar> obtenerCotizacionDolar();
+
+    // ── Dólares ──
+
+    // SIN idempotencia en el backend: usar SOLO con el cliente sin reintentos (RetrofitClient.getServiceSinReintentos)
+    @POST("api/cambio-dolares")
+    Call<OperacionCambioResponse> crearCambioDolares(@Body CrearCambioDolaresRequest request);
+
+    @GET("api/cambio-dolares")
+    Call<List<OperacionCambioResponse>> listarCambiosDolares();
+
+    // ── Cripto ──
+
+    // SIN idempotencia en el backend: usar SOLO con el cliente sin reintentos (RetrofitClient.getServiceSinReintentos)
+    @POST("api/cripto")
+    Call<OperacionCriptoResponse> crearOperacionCripto(@Body CrearOperacionCriptoRequest request);
+
+    @GET("api/cripto")
+    Call<List<OperacionCriptoResponse>> listarOperacionesCripto();
+
+    // ── Notificaciones (sin rate limit). A propósito NO está POST /registro-login: el backend ya
+    // crea la notificación de inicio de sesión dentro de /api/auth/login y /api/auth/google. ──
 
     @GET("api/notificaciones")
     Call<List<NotificacionResponse>> obtenerNotificaciones();

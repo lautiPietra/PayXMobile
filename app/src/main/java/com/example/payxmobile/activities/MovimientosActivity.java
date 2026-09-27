@@ -25,7 +25,16 @@ import com.example.payxmobile.actividad.Actividades;
 import com.example.payxmobile.actividad.FiltroMoneda;
 import com.example.payxmobile.actividad.MovimientosViewModel;
 import com.example.payxmobile.actividad.VistaMovimientos;
+import com.example.payxmobile.actividad.FeedCombinado;
+import com.example.payxmobile.actividad.ListaRemota;
+import com.example.payxmobile.cripto.CambiosCriptoRepository;
+import com.example.payxmobile.cripto.ui.FilaCambioCriptoVista;
+import com.example.payxmobile.model.OperacionCriptoResponse;
+import com.example.payxmobile.dolares.CambiosDolaresRepository;
+import com.example.payxmobile.dolares.ui.FilaCambioDolaresVista;
+import com.example.payxmobile.model.OperacionCambioResponse;
 import com.example.payxmobile.model.TransferenciaResponse;
+import com.example.payxmobile.notificaciones.ui.CampanaNotificaciones;
 import com.example.payxmobile.transferencias.Refrescos;
 import com.example.payxmobile.transferencias.TransferenciasRepository;
 import com.example.payxmobile.transferencias.ui.DetalleTransferenciaSheet;
@@ -62,8 +71,21 @@ public class MovimientosActivity extends AppCompatActivity {
     private TransferenciasRepository repo;
     private final TransferenciasRepository.Observador observador = this::onEstado;
     private TransferenciasRepository.Estado estado;
-    // El feed se arma una vez por cada lista nueva del repositorio; los filtros lo reusan
-    private List<TransferenciaResponse> listaConstruida;
+    // Compras/ventas de dólares y de cripto: se suman al feed (null = todavía no llegaron)
+    private ListaRemota<OperacionCambioResponse> cambiosRepo;
+    private ListaRemota<OperacionCriptoResponse> criptoRepo;
+    private final ListaRemota.Observador<OperacionCambioResponse> observadorCambios = e -> {
+        cambios = e.lista;
+        if (estado != null) onEstado(estado);
+    };
+    private final ListaRemota.Observador<OperacionCriptoResponse> observadorCripto = e -> {
+        operacionesCripto = e.lista;
+        if (estado != null) onEstado(estado);
+    };
+    private List<OperacionCambioResponse> cambios;
+    private List<OperacionCriptoResponse> operacionesCripto;
+    // El feed se arma una vez por cada lista nueva de algún repositorio; los filtros lo reusan
+    private final FeedCombinado feedCombinado = new FeedCombinado();
     private List<Actividad> actividades;
 
     private MovimientosViewModel filtros;
@@ -76,12 +98,16 @@ public class MovimientosActivity extends AppCompatActivity {
     private final Filas filas = new Filas();
     private final Pie pie = new Pie();
     private BottomNavigationView bottomNav;
+    private CampanaNotificaciones campana;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movimientos);
+        campana = new CampanaNotificaciones(this);
         repo = TransferenciasRepository.get(this);
+        cambiosRepo = CambiosDolaresRepository.get(this);
+        criptoRepo = CambiosCriptoRepository.get(this);
         detalle = new DetalleTransferenciaSheet(this);
         filtros = new ViewModelProvider(this).get(MovimientosViewModel.class);
         if (savedInstanceState != null) {
@@ -117,6 +143,10 @@ public class MovimientosActivity extends AppCompatActivity {
         super.onStart();
         repo.observar(observador);
         repo.iniciarAutoRefresco(); // YA y cada 10 s en primer plano (compartido con Inicio)
+        cambiosRepo.observar(observadorCambios);
+        cambiosRepo.iniciarAutoRefresco();
+        criptoRepo.observar(observadorCripto);
+        criptoRepo.iniciarAutoRefresco();
     }
 
     @Override
@@ -130,6 +160,10 @@ public class MovimientosActivity extends AppCompatActivity {
         super.onStop();
         repo.detenerAutoRefresco();
         repo.dejarDeObservar(observador);
+        cambiosRepo.detenerAutoRefresco();
+        cambiosRepo.dejarDeObservar(observadorCambios);
+        criptoRepo.detenerAutoRefresco();
+        criptoRepo.dejarDeObservar(observadorCripto);
     }
 
     @Override
@@ -155,10 +189,7 @@ public class MovimientosActivity extends AppCompatActivity {
             pullEnCurso = false;
             swipeRefresh.setRefreshing(false);
         }
-        if (e.lista != listaConstruida) {
-            listaConstruida = e.lista;
-            actividades = e.lista != null ? Actividades.construir(e.lista) : null;
-        }
+        actividades = feedCombinado.de(e.lista, cambios, operacionesCripto);
         render();
         if (detalleARestaurar != null && e.lista != null) {
             TransferenciaResponse t = e.buscar(detalleARestaurar);
@@ -197,6 +228,7 @@ public class MovimientosActivity extends AppCompatActivity {
         public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             v = LayoutInflater.from(parent.getContext()).inflate(R.layout.header_movimientos, parent, false);
             v.findViewById(R.id.btnBack).setOnClickListener(x -> finish());
+            campana.vincular(v);
             v.findViewById(R.id.btnReintentar).setOnClickListener(x -> repo.refrescar());
             v.findViewById(R.id.btnLimpiarFiltros).setOnClickListener(x -> cambiarFiltro(filtros::limpiar));
             v.findViewById(R.id.btnVerTodos).setOnClickListener(x -> cambiarFiltro(filtros::limpiar));
@@ -367,7 +399,7 @@ public class MovimientosActivity extends AppCompatActivity {
         @Override
         public boolean areContentsTheSame(@NonNull Actividad a, @NonNull Actividad b) {
             TransferenciaResponse x = a.transferencia, y = b.transferencia;
-            if (x == null || y == null) return x == y;
+            if (x == null || y == null) return x == y; // dólares/cripto: misma key = misma operación
             return Objects.equals(x.getEstado(), y.getEstado())
                     && Objects.equals(x.getConcepto(), y.getConcepto())
                     && Objects.equals(x.getFechaConfirmacion(), y.getFechaConfirmacion())
@@ -394,6 +426,14 @@ public class MovimientosActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
             Actividad a = getItem(position);
+            if (a.cambioCripto != null) {
+                FilaCambioCriptoVista.bind(holder.itemView, a.cambioCripto);
+                return;
+            }
+            if (a.cambioDolares != null) {
+                FilaCambioDolaresVista.bind(holder.itemView, a.cambioDolares);
+                return;
+            }
             if (a.transferencia == null) return; // otros tipos: se dibujan cuando existan
             FilaTransferenciaVista.bind(holder.itemView, a.transferencia);
             holder.itemView.setOnClickListener(x -> detalle.abrir(a.transferencia));

@@ -2,9 +2,7 @@ package com.example.payxmobile.activities;
 
 import android.os.Bundle;
 import android.view.View;
-import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -12,87 +10,86 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.payxmobile.R;
 import com.example.payxmobile.adapters.NotificacionesAdapter;
-import com.example.payxmobile.model.NotificacionResponse;
-import com.example.payxmobile.network.RetrofitClient;
+import com.example.payxmobile.notificaciones.NotificacionesRepository;
+import com.example.payxmobile.utils.SesionUtils;
 
-import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
+/**
+ * Panel de notificaciones. Todo el estado vive en {@link NotificacionesRepository}: esta pantalla
+ * solo lo dibuja. Mientras está visible, el polling de 10 s también trae la lista.
+ */
 public class NotificacionesActivity extends AppCompatActivity {
 
-    private NotificacionesAdapter adapter;
-    private List<NotificacionResponse> listaActual;
-    private TextView btnMarcarLeidas;
+    private static final String MSG_DESACTUALIZADO = "No pudimos actualizar tus notificaciones. Te mostramos las últimas que cargamos";
+
+    private NotificacionesRepository repo;
+    private final NotificacionesRepository.Observador observador = this::render;
+    private final NotificacionesAdapter adapter = new NotificacionesAdapter();
+
+    private TextView btnMarcarLeidas, tvAviso, tvError;
     private RecyclerView recycler;
-    private LinearLayout emptyState;
+    private View emptyState, estadoError, progreso;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notificaciones);
+        repo = NotificacionesRepository.get(this);
 
         recycler = findViewById(R.id.recyclerNotificaciones);
         emptyState = findViewById(R.id.emptyState);
+        estadoError = findViewById(R.id.estadoError);
+        progreso = findViewById(R.id.progreso);
         btnMarcarLeidas = findViewById(R.id.btnMarcarLeidas);
+        tvAviso = findViewById(R.id.tvAviso);
+        tvError = findViewById(R.id.tvError);
+
+        recycler.setLayoutManager(new LinearLayoutManager(this));
+        recycler.setAdapter(adapter);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
-
-        btnMarcarLeidas.setOnClickListener(v -> marcarLeidasYLimpiar());
-
-        cargarNotificaciones();
+        findViewById(R.id.btnReintentar).setOnClickListener(v -> repo.refrescar());
+        btnMarcarLeidas.setOnClickListener(v -> repo.marcarTodasLeidas());
     }
 
-    private void cargarNotificaciones() {
-        RetrofitClient.getService(this).obtenerNotificaciones()
-                .enqueue(new Callback<List<NotificacionResponse>>() {
-                    @Override
-                    public void onResponse(Call<List<NotificacionResponse>> call,
-                                           Response<List<NotificacionResponse>> response) {
-                        if (response.isSuccessful() && response.body() != null) {
-                            listaActual = response.body();
-                            mostrarLista(listaActual);
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<List<NotificacionResponse>> call, Throwable t) {
-                        Toast.makeText(NotificacionesActivity.this,
-                                "Sin conexión con el servidor", Toast.LENGTH_SHORT).show();
-                    }
-                });
+    @Override
+    protected void onStart() {
+        super.onStart();
+        repo.observar(observador);
+        repo.abrirPanel();          // refresca YA (badge + lista)
+        repo.iniciarAutoRefresco(); // y cada 10 s mientras se ve
     }
 
-    private void mostrarLista(List<NotificacionResponse> lista) {
-        if (lista.isEmpty()) {
-            recycler.setVisibility(View.GONE);
-            emptyState.setVisibility(View.VISIBLE);
-            btnMarcarLeidas.setVisibility(View.GONE);
-        } else {
-            recycler.setVisibility(View.VISIBLE);
-            emptyState.setVisibility(View.GONE);
-            btnMarcarLeidas.setVisibility(View.VISIBLE);
-            recycler.setLayoutManager(new LinearLayoutManager(this));
-            adapter = new NotificacionesAdapter(lista);
-            recycler.setAdapter(adapter);
+    @Override
+    protected void onStop() {
+        super.onStop();
+        repo.detenerAutoRefresco();
+        repo.cerrarPanel();
+        repo.dejarDeObservar(observador);
+    }
+
+    private void render(NotificacionesRepository.Estado e) {
+        if (isFinishing()) return;
+        if (e.sesionInvalida) {
+            SesionUtils.sesionInvalida(this);
+            return;
         }
-    }
+        boolean hayLista = e.lista != null && !e.lista.isEmpty();
+        boolean errorSinDatos = e.lista == null && e.errorPrimeraCarga != null;
 
-    private void marcarLeidasYLimpiar() {
-        // Limpiar UI de inmediato sin esperar la respuesta
-        listaActual.clear();
-        recycler.setVisibility(View.GONE);
-        emptyState.setVisibility(View.VISIBLE);
-        btnMarcarLeidas.setVisibility(View.GONE);
+        boolean reintentando = errorSinDatos && e.cargandoLista;
+        progreso.setVisibility(e.esPrimeraCarga() || reintentando ? View.VISIBLE : View.GONE);
+        estadoError.setVisibility(errorSinDatos && !reintentando ? View.VISIBLE : View.GONE);
+        tvError.setText(e.errorPrimeraCarga);
+        emptyState.setVisibility(e.vacia() ? View.VISIBLE : View.GONE);
+        recycler.setVisibility(hayLista ? View.VISIBLE : View.GONE);
+        adapter.setItems(e.lista);
 
-        // Llamada al backend en segundo plano
-        RetrofitClient.getService(this).marcarTodasLeidas().enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {}
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {}
-        });
+        btnMarcarLeidas.setVisibility(hayLista ? View.VISIBLE : View.GONE);
+        btnMarcarLeidas.setEnabled(!e.marcando);
+        btnMarcarLeidas.setText(e.marcando ? "Marcando..." : "Marcar todas como leídas");
+
+        String aviso = e.errorMarcar != null ? e.errorMarcar : (e.desactualizado ? MSG_DESACTUALIZADO : null);
+        tvAviso.setVisibility(aviso != null ? View.VISIBLE : View.GONE);
+        tvAviso.setText(aviso);
     }
 }

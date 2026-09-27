@@ -36,6 +36,12 @@ public class SaldosRepository {
 
     public static final long INTERVALO_SALDO_MS = 10_000L;
     public static final long INTERVALO_COTIZACIONES_MS = 20_000L;
+    /**
+     * Con la pantalla de compra/venta de cripto abierta. Es lo mínimo seguro: el backend limita
+     * GET /api/cotizacion/cripto a 30/min por usuario (cada 2 s ya lo agotaría, sin margen) y además
+     * refresca el precio de CoinGecko como mucho cada 60 s, así que pedirlo más seguido no trae nada nuevo.
+     */
+    public static final long INTERVALO_COTIZACIONES_RAPIDO_MS = 3_000L;
 
     /** Programa una tarea con demora y devuelve cómo cancelarla. */
     public interface Programador {
@@ -71,11 +77,13 @@ public class SaldosRepository {
     private Map<String, CotizacionCripto> cotizaciones = new LinkedHashMap<>();
     private boolean saldoEnVuelo;
     private boolean cotizacionesEnVuelo;
+    private boolean sinCotizacionesEnBackend;
     private boolean sesionInvalida;
     // Cambia en cada limpiar(): las respuestas de una sesión anterior se descartan
     private int generacion;
 
-    private boolean autoRefrescoActivo;
+    private int pedidosDeAutoRefresco;
+    private int pedidosDeCotizacionesRapidas;
     private Runnable cancelarSaldo;
     private Runnable cancelarCotizaciones;
 
@@ -98,7 +106,8 @@ public class SaldosRepository {
 
     public synchronized EstadoSaldos getEstado() {
         return new EstadoSaldos(perfil, errorPrimeraCarga, desactualizado,
-                new LinkedHashMap<>(cotizaciones), saldoEnVuelo, cotizacionesEnVuelo, sesionInvalida);
+                new LinkedHashMap<>(cotizaciones), saldoEnVuelo, cotizacionesEnVuelo, sesionInvalida,
+                sinCotizacionesEnBackend);
     }
 
     private void notificar() {
@@ -113,16 +122,22 @@ public class SaldosRepository {
         pedirSaldo();
     }
 
+    /** Solo las cotizaciones cripto (pantalla de compra/venta al abrirse). Sin solapar pedidos. */
+    public void refrescarCotizaciones() {
+        pedirCotizaciones();
+    }
+
     /** Saldo + cotizaciones (pull-to-refresh). */
     public void refrescarTodo() {
         pedirSaldo();
         pedirCotizaciones();
     }
 
+    /** Pantallas que pidieron auto-refresco (Inicio, compra/venta de cripto...). Timer mientras haya >= 1. */
     public void iniciarAutoRefresco() {
         synchronized (this) {
-            if (autoRefrescoActivo) return;
-            autoRefrescoActivo = true;
+            pedidosDeAutoRefresco++;
+            if (pedidosDeAutoRefresco > 1) return;
         }
         refrescarTodo();
         programarSaldo();
@@ -130,7 +145,11 @@ public class SaldosRepository {
     }
 
     public synchronized void detenerAutoRefresco() {
-        autoRefrescoActivo = false;
+        if (pedidosDeAutoRefresco > 0) pedidosDeAutoRefresco--;
+        if (pedidosDeAutoRefresco == 0) cortarTimers();
+    }
+
+    private synchronized void cortarTimers() {
         if (cancelarSaldo != null) cancelarSaldo.run();
         if (cancelarCotizaciones != null) cancelarCotizaciones.run();
         cancelarSaldo = null;
@@ -140,7 +159,9 @@ public class SaldosRepository {
     /** Logout: borra todo y descarta las respuestas que sigan en vuelo. */
     public void limpiar() {
         synchronized (this) {
-            detenerAutoRefresco();
+            pedidosDeAutoRefresco = 0;
+            pedidosDeCotizacionesRapidas = 0;
+            cortarTimers();
             generacion++;
             perfil = null;
             errorPrimeraCarga = null;
@@ -149,12 +170,13 @@ public class SaldosRepository {
             saldoEnVuelo = false;
             cotizacionesEnVuelo = false;
             sesionInvalida = false;
+            sinCotizacionesEnBackend = false;
         }
         notificar();
     }
 
     private synchronized void programarSaldo() {
-        if (!autoRefrescoActivo) return;
+        if (pedidosDeAutoRefresco == 0) return;
         cancelarSaldo = programador.programar(() -> {
             if (!estaActivo()) return;
             pedirSaldo();
@@ -162,17 +184,37 @@ public class SaldosRepository {
         }, INTERVALO_SALDO_MS);
     }
 
+    /**
+     * Precios cripto "en vivo" (cada 3 s) mientras alguna pantalla lo pida; al soltarlo se vuelve a
+     * 20 s. Solo tiene efecto con el auto-refresco activo.
+     */
+    public synchronized void iniciarCotizacionesRapidas() {
+        pedidosDeCotizacionesRapidas++;
+        if (pedidosDeCotizacionesRapidas == 1) reprogramarCotizaciones();
+    }
+
+    public synchronized void detenerCotizacionesRapidas() {
+        if (pedidosDeCotizacionesRapidas > 0) pedidosDeCotizacionesRapidas--;
+        if (pedidosDeCotizacionesRapidas == 0) reprogramarCotizaciones();
+    }
+
+    private synchronized void reprogramarCotizaciones() {
+        if (pedidosDeAutoRefresco == 0) return;
+        if (cancelarCotizaciones != null) cancelarCotizaciones.run();
+        programarCotizaciones();
+    }
+
     private synchronized void programarCotizaciones() {
-        if (!autoRefrescoActivo) return;
+        if (pedidosDeAutoRefresco == 0) return;
         cancelarCotizaciones = programador.programar(() -> {
             if (!estaActivo()) return;
             pedirCotizaciones();
             programarCotizaciones();
-        }, INTERVALO_COTIZACIONES_MS);
+        }, pedidosDeCotizacionesRapidas > 0 ? INTERVALO_COTIZACIONES_RAPIDO_MS : INTERVALO_COTIZACIONES_MS);
     }
 
     private synchronized boolean estaActivo() {
-        return autoRefrescoActivo;
+        return pedidosDeAutoRefresco > 0;
     }
 
     private void pedirSaldo() {
@@ -196,7 +238,8 @@ public class SaldosRepository {
                     } else if (response.code() == 403) {
                         // GET sin body: 403 = token inválido/vencido o cuenta desactivada
                         sesionInvalida = true;
-                        detenerAutoRefresco();
+                        pedidosDeAutoRefresco = 0;
+                        cortarTimers();
                     } else {
                         registrarFallo(ApiErrores.mensaje(response));
                     }
@@ -248,6 +291,9 @@ public class SaldosRepository {
                             }
                         }
                         cotizaciones = nuevas;
+                        sinCotizacionesEnBackend = false;
+                    } else if (response.code() == 503) {
+                        sinCotizacionesEnBackend = true;
                     }
                 }
                 notificar();

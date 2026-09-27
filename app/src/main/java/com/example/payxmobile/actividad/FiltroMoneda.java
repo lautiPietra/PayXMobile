@@ -8,9 +8,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Filtro de "Mis movimientos" por moneda de la transferencia: pesos, dólares o cualquiera de las
- * 6 cripto. Solo aplica a transferencias: con un filtro de moneda activo, los movimientos de
- * otros tipos (cuando existan) no entran.
+ * Filtro de "Mis movimientos" por moneda: pesos, dólares o cualquiera de las 6 cripto. Aplica a
+ * transferencias (por su moneda), a las compras/ventas de dólares ("Dólares") y a las de cripto
+ * ("Cripto", las 6 monedas juntas). Los demás tipos (cuando existan) no entran con un filtro de
+ * moneda activo.
  */
 public enum FiltroMoneda {
     TODAS("Todas"),
@@ -27,6 +28,8 @@ public enum FiltroMoneda {
     /** ¿Este movimiento entra con este filtro? */
     public boolean acepta(Actividad a) {
         if (this == TODAS) return true;
+        if (a.cambioDolares != null) return this == DOLARES;
+        if (a.cambioCripto != null) return this == CRIPTO; // las 6 monedas juntas
         if (a.transferencia == null) return false;
         Moneda m = Moneda.desde(a.transferencia.getMoneda());
         if (m == null) return false;

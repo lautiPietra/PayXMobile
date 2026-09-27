@@ -53,10 +53,10 @@
                         android:textSize="17sp"
                         android:textStyle="bold" />
 
-                    <!-- Espaciador para centrar el título -->
-                    <View
-                        android:layout_width="36dp"
-                        android:layout_height="36dp" />
+                    <include
+                        layout="@layout/include_campana"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp" />
                 </LinearLayout>
 
                 <!-- Avatar: foto en círculo o inicial sobre degradé + botón de edición -->

@@ -27,6 +27,9 @@ import com.example.payxmobile.model.MensajeResponse;
 import com.example.payxmobile.model.ReenviarCodigoRequest;
 import com.example.payxmobile.network.ApiErrores;
 import com.example.payxmobile.network.RetrofitClient;
+import com.example.payxmobile.cripto.CambiosCriptoRepository;
+import com.example.payxmobile.dolares.CambiosDolaresRepository;
+import com.example.payxmobile.notificaciones.NotificacionesRepository;
 import com.example.payxmobile.saldos.SaldosRepository;
 import com.example.payxmobile.transferencias.TransferenciasRepository;
 import com.example.payxmobile.utils.CamposUi;
@@ -259,6 +262,9 @@ public class LoginActivity extends AppCompatActivity {
         // Estado de saldos limpio para la cuenta que entra
         SaldosRepository.get(this).limpiar();
         TransferenciasRepository.get(this).limpiar();
+        NotificacionesRepository.get(this).limpiar();
+        CambiosDolaresRepository.get(this).limpiar();
+        CambiosCriptoRepository.get(this).limpiar();
         // No se llama a /api/notificaciones/registro-login: el backend ya crea la notificación INICIO_SES
         sessionManager.saveSession(
                 body.getToken(),
