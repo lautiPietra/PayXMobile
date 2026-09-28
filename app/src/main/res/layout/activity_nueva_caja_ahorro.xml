@@ -66,6 +66,7 @@
 
         <!-- ══ TÍTULO ══ -->
         <TextView
+            android:id="@+id/tvTitulo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="6dp"
@@ -109,24 +110,41 @@
 
             <TextView
                 android:id="@+id/tvPreviewNombre"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:text="Nombre de la caja"
                 android:textColor="@color/white"
                 android:textSize="16sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- ══ NOMBRE ══ -->
-        <TextView
+        <!-- ══ NOMBRE (máx. 40, como el backend) ══ -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
             android:layout_marginBottom="8dp"
-            android:text="Nombre"
-            android:textColor="@color/text_primary"
-            android:textSize="13.5sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Nombre"
+                android:textColor="@color/text_primary"
+                android:textSize="13.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvContadorNombre"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_hint"
+                android:textSize="12sp" />
+        </LinearLayout>
 
         <EditText
             android:id="@+id/etNombreCaja"
@@ -136,13 +154,14 @@
             android:layout_marginBottom="18dp"
             android:background="@drawable/bg_input_dark"
             android:hint="Ej: Viaje a Bariloche"
-            android:inputType="text"
+            android:inputType="textCapSentences"
+            android:maxLength="40"
             android:padding="14dp"
             android:textColor="@color/text_primary"
             android:textColorHint="@color/text_hint"
             android:textSize="14sp" />
 
-        <!-- ══ META ══ -->
+        <!-- ══ META (opcional: en blanco = sin meta) ══ -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -153,21 +172,51 @@
             android:textSize="13.5sp"
             android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/etMetaCaja"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="6dp"
             android:background="@drawable/bg_input_dark"
-            android:hint="$ Sin meta definida"
-            android:inputType="numberDecimal"
-            android:padding="14dp"
-            android:textColor="@color/text_primary"
-            android:textColorHint="@color/text_hint"
-            android:textSize="14sp" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="14dp">
 
-        <!-- ══ COLOR ══ -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:text="$"
+                android:textColor="@color/text_secondary"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etMetaCaja"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:digits="0123456789,."
+                android:hint="Sin meta definida"
+                android:inputType="numberDecimal"
+                android:paddingVertical="14dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_hint"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvAyudaMeta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="22dp"
+            android:layout_marginBottom="24dp"
+            android:text="Dejala en blanco si la caja es solo para separar plata."
+            android:textColor="@color/text_hint"
+            android:textSize="12sp" />
+
+        <!-- ══ COLOR: solo los 8 de la whitelist del backend (se arman en código) ══ -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -179,358 +228,51 @@
             android:textStyle="bold" />
 
         <LinearLayout
+            android:id="@+id/filaColores"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
             android:layout_marginBottom="24dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal" />
 
-            <FrameLayout
-                android:id="@+id/colorSwatch0"
-                android:layout_width="0dp"
-                android:layout_height="38dp"
-                android:layout_weight="1">
-
-                <View
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="center"
-                    android:background="@drawable/bg_icon_circle_solid"
-                    android:backgroundTint="@color/caja_color_1" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/colorSwatch1"
-                android:layout_width="0dp"
-                android:layout_height="38dp"
-                android:layout_weight="1">
-
-                <View
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="center"
-                    android:background="@drawable/bg_icon_circle_solid"
-                    android:backgroundTint="@color/caja_color_2" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/colorSwatch2"
-                android:layout_width="0dp"
-                android:layout_height="38dp"
-                android:layout_weight="1">
-
-                <View
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="center"
-                    android:background="@drawable/bg_icon_circle_solid"
-                    android:backgroundTint="@color/caja_color_3" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/colorSwatch3"
-                android:layout_width="0dp"
-                android:layout_height="38dp"
-                android:layout_weight="1">
-
-                <View
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="center"
-                    android:background="@drawable/bg_icon_circle_solid"
-                    android:backgroundTint="@color/caja_color_4" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/colorSwatch4"
-                android:layout_width="0dp"
-                android:layout_height="38dp"
-                android:layout_weight="1">
-
-                <View
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="center"
-                    android:background="@drawable/bg_icon_circle_solid"
-                    android:backgroundTint="@color/caja_color_5" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/colorSwatch5"
-                android:layout_width="0dp"
-                android:layout_height="38dp"
-                android:layout_weight="1">
-
-                <View
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="center"
-                    android:background="@drawable/bg_icon_circle_solid"
-                    android:backgroundTint="@color/caja_color_6" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/colorSwatch6"
-                android:layout_width="0dp"
-                android:layout_height="38dp"
-                android:layout_weight="1">
-
-                <View
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_gravity="center"
-                    android:background="@drawable/bg_icon_circle_solid"
-                    android:backgroundTint="@color/caja_color_7" />
-            </FrameLayout>
-        </LinearLayout>
-
-        <!-- ══ ICONO ══ -->
+        <!-- ══ ÍCONO: solo los 12 de la whitelist del backend, en 2 filas ══ -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
             android:layout_marginBottom="10dp"
-            android:text="Icono"
+            android:text="Ícono"
             android:textColor="@color/text_primary"
             android:textSize="13.5sp"
             android:textStyle="bold" />
 
         <LinearLayout
+            android:id="@+id/filaIconos1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="10dp"
-            android:orientation="horizontal">
-
-            <FrameLayout
-                android:id="@+id/iconoOpcion0"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_piggy_bank"
-                    app:tint="@color/payx_orange" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/iconoOpcion1"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_target"
-                    app:tint="@color/text_secondary" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/iconoOpcion2"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_shield"
-                    app:tint="@color/text_secondary" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/iconoOpcion3"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_plane"
-                    app:tint="@color/text_secondary" />
-            </FrameLayout>
-        </LinearLayout>
+            android:layout_marginBottom="8dp"
+            android:orientation="horizontal" />
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="10dp"
-            android:orientation="horizontal">
-
-            <FrameLayout
-                android:id="@+id/iconoOpcion4"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_briefcase"
-                    app:tint="@color/text_secondary" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/iconoOpcion5"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_book"
-                    app:tint="@color/text_secondary" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/iconoOpcion6"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_heart"
-                    app:tint="@color/text_secondary" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/iconoOpcion7"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_gift"
-                    app:tint="@color/text_secondary" />
-            </FrameLayout>
-        </LinearLayout>
-
-        <LinearLayout
+            android:id="@+id/filaIconos2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
             android:layout_marginBottom="26dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal" />
 
-            <FrameLayout
-                android:id="@+id/iconoOpcion8"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
+        <TextView
+            android:id="@+id/tvAvisoLimite"
+            style="@style/TransferAvisoPendiente"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="14dp"
+            android:visibility="gone" />
 
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_bag"
-                    app:tint="@color/text_secondary" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/iconoOpcion9"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_home"
-                    app:tint="@color/text_secondary" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/iconoOpcion10"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_wallet"
-                    app:tint="@color/text_secondary" />
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/iconoOpcion11"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_icono_caja"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_trending_up"
-                    app:tint="@color/text_secondary" />
-            </FrameLayout>
-        </LinearLayout>
+        <TextView
+            android:id="@+id/tvError"
+            style="@style/TransferError"
+            android:visibility="gone" />
 
         <!-- ══ BOTONES ══ -->
         <Button

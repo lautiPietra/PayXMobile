@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#131313"
+    android:overScrollMode="never">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="32dp">
+
+        <!-- ══ HEADER ══ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="48dp"
+            android:paddingBottom="20dp">
+
+            <LinearLayout
+                android:id="@+id/btnVolver"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
+                android:padding="6dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_back"
+                    app:tint="@color/payx_orange" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="Volver"
+                    android:textColor="@color/payx_orange"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <ImageView
+                android:id="@+id/btnCerrar"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_action_button"
+                android:src="@drawable/ic_close"
+                android:padding="9dp" />
+        </LinearLayout>
+
+        <!-- ══════ CONFIRMAR (monto exacto, no hay nada que escribir) ══════ -->
+        <LinearLayout
+            android:id="@+id/seccionConfirmar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/ivIcono"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_icon_circle_solid"
+                android:importantForAccessibility="no"
+                android:padding="15dp"
+                app:tint="@color/white" />
+
+            <TextView
+                android:id="@+id/tvTitulo"
+                style="@style/TransferTitulo" />
+
+            <TextView
+                android:id="@+id/tvSubtitulo"
+                style="@style/TransferSubtitulo" />
+
+            <TextView
+                android:id="@+id/tvMonto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:gravity="center"
+                android:textColor="@color/text_primary"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvAvisoVencida"
+                style="@style/TransferAvisoPendiente"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="14dp"
+                android:text="Esta factura ya venció. La podés pagar igual, sin recargo."
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/bg_saldo_disponible"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="10dp"
+                    android:src="@drawable/ic_wallet"
+                    app:tint="@color/payx_orange" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Saldo disponible"
+                    android:textColor="@color/payx_orange"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSaldo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvError"
+                style="@style/TransferError"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btnConfirmar"
+                style="@style/TransferBotonPrincipal"
+                android:text="Confirmar pago" />
+
+            <Button
+                android:id="@+id/btnCancelar"
+                style="@style/TransferBotonSecundario"
+                android:text="Cancelar" />
+        </LinearLayout>
+
+        <!-- ══════ RESULTADO: éxito (datos REALES del backend) o incierto ══════ -->
+        <LinearLayout
+            android:id="@+id/seccionResultado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingTop="24dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/ivIconoResultado"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/bg_icon_badge_dolares"
+                android:importantForAccessibility="no"
+                android:padding="18dp"
+                android:src="@drawable/ic_check"
+                app:tint="@color/color_positivo" />
+
+            <TextView
+                android:id="@+id/tvTituloResultado"
+                style="@style/TransferTitulo" />
+
+            <TextView
+                android:id="@+id/tvTextoResultado"
+                style="@style/TransferSubtitulo"
+                android:layout_marginBottom="8dp"
+                android:lineSpacingExtra="3dp"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/tvDetalleResultado"
+                style="@style/TransferSubtitulo"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnListo"
+                style="@style/TransferBotonPrincipal"
+                android:text="Listo" />
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

@@ -66,6 +66,7 @@
 
         <!-- ══ TÍTULO ══ -->
         <TextView
+            android:id="@+id/tvTitulo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="6dp"
@@ -77,6 +78,7 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/tvSubtitulo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
@@ -101,6 +103,51 @@
             android:textColor="@color/payx_orange"
             android:textSize="13.5sp"
             android:textStyle="bold" />
+
+        <!-- ══════ TASAS: sin /tasas no hay formulario (cargando o error) ══════ -->
+        <LinearLayout
+            android:id="@+id/seccionTasas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingVertical="40dp"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:id="@+id/progressTasas"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginBottom="10dp"
+                android:indeterminateTint="@color/payx_orange" />
+
+            <TextView
+                android:id="@+id/tvEstadoTasas"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingHorizontal="24dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReintentarTasas"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reintentar"
+                android:textAllCaps="false"
+                android:textColor="@color/payx_orange"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- ══════ FORMULARIO ══════ -->
+        <LinearLayout
+            android:id="@+id/seccionFormulario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
 
         <!-- ══ RESUMEN ══ -->
         <LinearLayout
@@ -156,7 +203,6 @@
                 android:background="@drawable/bg_pill_orange_tint"
                 android:paddingHorizontal="14dp"
                 android:paddingVertical="6dp"
-                android:text="30 días · TNA 35.5%"
                 android:textColor="@color/payx_orange"
                 android:textSize="12sp"
                 android:textStyle="bold" />
@@ -270,7 +316,7 @@
                 android:id="@+id/tvSaldoDisponible"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="$ 97.567.742,00"
+                android:text="—"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -291,7 +337,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="18dp"
+            android:layout_marginBottom="6dp"
             android:background="@drawable/bg_input_dark"
             android:gravity="center_vertical"
             android:orientation="horizontal"
@@ -314,6 +360,7 @@
                 android:background="@android:color/transparent"
                 android:hint="0,00"
                 android:inputType="numberDecimal"
+                android:digits="0123456789,."
                 android:paddingVertical="14dp"
                 android:textColor="@color/text_primary"
                 android:textColorHint="@color/text_hint"
@@ -332,7 +379,16 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- ══ PLAZO ══ -->
+        <TextView
+            android:id="@+id/tvMontoMinimo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="22dp"
+            android:layout_marginBottom="18dp"
+            android:textColor="@color/text_hint"
+            android:textSize="12sp" />
+
+        <!-- ══ PLAZO: uno por cada "dias" que devolvió /tasas ══ -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -362,7 +418,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="30 días · TNA 35.5%"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -390,7 +445,7 @@
                 android:layout_width="18dp"
                 android:layout_height="18dp"
                 android:layout_marginEnd="10dp"
-                android:src="@drawable/ic_clock"
+                android:src="@drawable/ic_calendar"
                 app:tint="@color/payx_orange" />
 
             <TextView
@@ -402,6 +457,19 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
         </LinearLayout>
+
+        <!-- Tope de activos: se avisa ANTES de intentar (el botón queda deshabilitado) -->
+        <TextView
+            android:id="@+id/tvAvisoLimite"
+            style="@style/TransferAvisoPendiente"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="14dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvError"
+            style="@style/TransferError"
+            android:visibility="gone" />
 
         <!-- ══ BOTONES ══ -->
         <Button
@@ -434,6 +502,159 @@
             android:textColor="@color/text_secondary"
             android:textSize="15sp"
             android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- ══════ CONFIRMAR: resumen antes de mover plata ══════ -->
+        <LinearLayout
+            android:id="@+id/seccionConfirmar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                style="@style/TransferTitulo"
+                android:text="Confirmá el plazo fijo" />
+
+            <TextView
+                style="@style/TransferSubtitulo"
+                android:text="Revisá que los datos sean correctos antes de confirmar" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Vas a invertir"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvMontoConfirmar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/text_primary"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_input_dark"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <LinearLayout style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="Plazo" />
+                    <TextView android:id="@+id/tvPlazoConfirmar" style="@style/TransferFilaValor" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="Interés estimado" />
+                    <TextView
+                        android:id="@+id/tvInteresConfirmar"
+                        style="@style/TransferFilaValor"
+                        android:textColor="@color/color_positivo"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="Total al vencimiento" />
+                    <TextView
+                        android:id="@+id/tvTotalConfirmar"
+                        style="@style/TransferFilaValor"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="Vencimiento estimado" />
+                    <TextView android:id="@+id/tvVencimientoConfirmar" style="@style/TransferFilaValor" />
+                </LinearLayout>
+
+                <LinearLayout style="@style/TransferFilaDato">
+                    <TextView style="@style/TransferFilaEtiqueta" android:text="Saldo luego de invertir" />
+                    <TextView android:id="@+id/tvSaldoLuegoConfirmar" style="@style/TransferFilaValor" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="20dp"
+                android:gravity="center"
+                android:lineSpacingExtra="2dp"
+                android:text="El monto sale de tu cuenta en pesos al confirmar y no se puede retirar antes del vencimiento."
+                android:textColor="@color/text_hint"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvErrorConfirmar"
+                style="@style/TransferError"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btnConfirmar"
+                style="@style/TransferBotonPrincipal"
+                android:text="Confirmar plazo fijo" />
+
+            <Button
+                android:id="@+id/btnModificar"
+                style="@style/TransferBotonSecundario"
+                android:text="Modificar" />
+        </LinearLayout>
+
+        <!-- ══════ RESULTADO: éxito (datos REALES del backend) o incierto ══════ -->
+        <LinearLayout
+            android:id="@+id/seccionResultado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingTop="24dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/ivIconoResultado"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_marginBottom="20dp"
+                android:background="@drawable/bg_icon_badge_dolares"
+                android:importantForAccessibility="no"
+                android:padding="18dp"
+                android:src="@drawable/ic_check"
+                app:tint="@color/color_positivo" />
+
+            <TextView
+                android:id="@+id/tvTituloResultado"
+                style="@style/TransferTitulo" />
+
+            <TextView
+                android:id="@+id/tvTextoResultado"
+                style="@style/TransferSubtitulo"
+                android:layout_marginBottom="8dp"
+                android:lineSpacingExtra="3dp"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/tvDetalleResultado"
+                style="@style/TransferSubtitulo"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnListo"
+                style="@style/TransferBotonPrincipal"
+                android:text="Listo" />
+
+            <Button
+                android:id="@+id/btnVerMisPlazosResultado"
+                style="@style/TransferBotonSecundario"
+                android:text="Ver mis plazos fijos" />
+        </LinearLayout>
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

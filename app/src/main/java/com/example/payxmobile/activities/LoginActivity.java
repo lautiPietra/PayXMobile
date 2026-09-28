@@ -27,10 +27,14 @@ import com.example.payxmobile.model.MensajeResponse;
 import com.example.payxmobile.model.ReenviarCodigoRequest;
 import com.example.payxmobile.network.ApiErrores;
 import com.example.payxmobile.network.RetrofitClient;
+import com.example.payxmobile.cajas.CajasAhorroRepository;
+import com.example.payxmobile.cajas.MovimientosCajaSesion;
 import com.example.payxmobile.cripto.CambiosCriptoRepository;
 import com.example.payxmobile.dolares.CambiosDolaresRepository;
 import com.example.payxmobile.notificaciones.NotificacionesRepository;
+import com.example.payxmobile.plazofijo.PlazosFijosRepository;
 import com.example.payxmobile.saldos.SaldosRepository;
+import com.example.payxmobile.servicios.ServiciosRepository;
 import com.example.payxmobile.transferencias.TransferenciasRepository;
 import com.example.payxmobile.utils.CamposUi;
 import com.example.payxmobile.utils.SesionUtils;
@@ -265,6 +269,11 @@ public class LoginActivity extends AppCompatActivity {
         NotificacionesRepository.get(this).limpiar();
         CambiosDolaresRepository.get(this).limpiar();
         CambiosCriptoRepository.get(this).limpiar();
+        PlazosFijosRepository.get(this).limpiar();
+        CajasAhorroRepository.get(this).limpiar();
+        MovimientosCajaSesion.get(this).cerrarSesion();
+        ServiciosRepository.catalogo(this).limpiar();
+        ServiciosRepository.historial(this).limpiar();
         // No se llama a /api/notificaciones/registro-login: el backend ya crea la notificación INICIO_SES
         sessionManager.saveSession(
                 body.getToken(),

@@ -43,6 +43,15 @@ import com.example.payxmobile.dolares.ui.FilaCambioDolaresVista;
 import com.example.payxmobile.model.OperacionCambioResponse;
 import com.example.payxmobile.model.TransferenciaResponse;
 import com.example.payxmobile.saldos.EstadoSaldos;
+import com.example.payxmobile.cajas.MovimientoCaja;
+import com.example.payxmobile.cajas.MovimientosCajaSesion;
+import com.example.payxmobile.cajas.ui.FilaMovimientoCajaVista;
+import com.example.payxmobile.model.FacturaResponse;
+import com.example.payxmobile.model.PlazoFijoResponse;
+import com.example.payxmobile.servicios.ServiciosRepository;
+import com.example.payxmobile.servicios.ui.FilaPagoServicioVista;
+import com.example.payxmobile.plazofijo.PlazosFijosRepository;
+import com.example.payxmobile.plazofijo.ui.FilaPlazoFijoVista;
 import com.example.payxmobile.saldos.SaldosRepository;
 import com.example.payxmobile.saldos.VistaSaldo;
 import com.example.payxmobile.transferencias.TransferenciasRepository;
@@ -107,8 +116,28 @@ public class HomeActivity extends AppCompatActivity {
         operacionesCripto = e.lista;
         onActividades();
     };
+    // Plazos fijos: alta y, si venció, acreditación
+    private ListaRemota<PlazoFijoResponse> plazosRepo;
+    private final ListaRemota.Observador<PlazoFijoResponse> observadorPlazos = e -> {
+        plazosFijos = e.lista;
+        onActividades();
+    };
     private List<OperacionCambioResponse> cambios;
     private List<OperacionCriptoResponse> operacionesCripto;
+    private List<PlazoFijoResponse> plazosFijos;
+    // Depósitos/retiros de cajas vistos en esta sesión (el backend no tiene historial)
+    private final MovimientosCajaSesion.Observador observadorCajas = l -> {
+        movimientosCaja = l;
+        onActividades();
+    };
+    private List<MovimientoCaja> movimientosCaja;
+    // Pagos de servicios: las facturas PAGADAS del historial completo (persistente, sin polling)
+    private ListaRemota<FacturaResponse> facturasRepo;
+    private final ListaRemota.Observador<FacturaResponse> observadorFacturas = e -> {
+        facturas = e.lista;
+        onActividades();
+    };
+    private List<FacturaResponse> facturas;
     private final FeedCombinado feedCombinado = new FeedCombinado();
     private DetalleTransferenciaSheet detalleSheet;
 
@@ -137,6 +166,8 @@ public class HomeActivity extends AppCompatActivity {
         transferenciasRepo = TransferenciasRepository.get(this);
         cambiosRepo = CambiosDolaresRepository.get(this);
         criptoRepo = CambiosCriptoRepository.get(this);
+        plazosRepo = PlazosFijosRepository.get(this);
+        facturasRepo = ServiciosRepository.historial(this);
         detalleSheet = new DetalleTransferenciaSheet(this);
         swipeRefresh = findViewById(R.id.swipeRefresh);
         swipeRefresh.setColorSchemeResources(R.color.payx_orange);
@@ -146,6 +177,8 @@ public class HomeActivity extends AppCompatActivity {
             transferenciasRepo.refrescar();
             cambiosRepo.refrescar();
             criptoRepo.refrescar();
+            plazosRepo.refrescar();
+            facturasRepo.refrescar();
             onEstadoSaldos(saldosRepository.getEstado());
         });
 
@@ -179,6 +212,8 @@ public class HomeActivity extends AppCompatActivity {
             transferenciasRepo.refrescar();
             cambiosRepo.refrescar();
             criptoRepo.refrescar();
+            plazosRepo.refrescar();
+            facturasRepo.refrescar();
         });
     }
 
@@ -208,6 +243,11 @@ public class HomeActivity extends AppCompatActivity {
         cambiosRepo.iniciarAutoRefresco();
         criptoRepo.observar(observadorCripto);
         criptoRepo.iniciarAutoRefresco();
+        plazosRepo.observar(observadorPlazos);
+        plazosRepo.iniciarAutoRefresco();
+        MovimientosCajaSesion.get(this).observar(observadorCajas);
+        facturasRepo.observar(observadorFacturas);
+        facturasRepo.refrescar(); // al entrar (el historial cambia poco: sin polling)
         // Así "Comprar/Vender dólares" (desde Inversiones) muestra el precio al instante
         CotizacionDolarRepository.get(this).precargar();
     }
@@ -224,6 +264,10 @@ public class HomeActivity extends AppCompatActivity {
         cambiosRepo.dejarDeObservar(observadorCambios);
         criptoRepo.detenerAutoRefresco();
         criptoRepo.dejarDeObservar(observadorCripto);
+        plazosRepo.detenerAutoRefresco();
+        plazosRepo.dejarDeObservar(observadorPlazos);
+        MovimientosCajaSesion.get(this).dejarDeObservar(observadorCajas);
+        facturasRepo.dejarDeObservar(observadorFacturas);
     }
 
     @Override
@@ -342,7 +386,10 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(new Intent(HomeActivity.this, PerfilActivity.class));
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         });
-        vincularItemMenuLateral(R.id.itemEstadisticas);
+        findViewById(R.id.itemEstadisticas).setOnClickListener(v -> {
+            cerrarMenu();
+            abrirEstadisticas();
+        });
 
         findViewById(R.id.itemMovimientos).setOnClickListener(v -> {
             cerrarMenu();
@@ -445,7 +492,9 @@ public class HomeActivity extends AppCompatActivity {
         View accionTarjeta = findViewById(R.id.accionTarjeta);
         configurarAccion(accionTarjeta, R.drawable.ic_credit_card, "Tarjeta virtual");
         accionTarjeta.setOnClickListener(v -> abrirTarjetaVirtual());
-        configurarAccion(findViewById(R.id.accionEstadisticas), R.drawable.ic_bar_chart, "Estadísticas");
+        View accionEstadisticas = findViewById(R.id.accionEstadisticas);
+        configurarAccion(accionEstadisticas, R.drawable.ic_bar_chart, "Estadísticas");
+        accionEstadisticas.setOnClickListener(v -> abrirEstadisticas());
     }
 
     private void abrirTransferencia(String moneda) {
@@ -465,6 +514,11 @@ public class HomeActivity extends AppCompatActivity {
 
     private void abrirServicios() {
         startActivity(new Intent(this, ServiciosActivity.class));
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
+    private void abrirEstadisticas() {
+        startActivity(new Intent(this, EstadisticasActivity.class));
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
@@ -516,7 +570,7 @@ public class HomeActivity extends AppCompatActivity {
         TransferenciasRepository.Estado estado = estadoTransferencias;
         if (estado == null) return;
         // El feed se arma solo cuando cambia alguna de las listas
-        List<Actividad> feed = feedCombinado.de(estado.lista, cambios, operacionesCripto);
+        List<Actividad> feed = feedCombinado.de(estado.lista, cambios, operacionesCripto, plazosFijos, movimientosCaja, facturas);
         VistaMovimientos v = VistaMovimientos.inicio(estado, feed);
         LinearLayout lista = findViewById(R.id.layoutActividades);
         boolean hayFilas = v.modo == VistaMovimientos.Modo.LISTA;
@@ -542,6 +596,18 @@ public class HomeActivity extends AppCompatActivity {
         for (int i = 0; i < v.visibles.size(); i++) {
             Actividad a = v.visibles.get(i);
             View fila = lista.getChildAt(i);
+            if (a.plazoFijo != null) {
+                FilaPlazoFijoVista.bind(fila, a);
+                continue;
+            }
+            if (a.movimientoCaja != null) {
+                FilaMovimientoCajaVista.bind(fila, a.movimientoCaja);
+                continue;
+            }
+            if (a.pagoServicio != null) {
+                FilaPagoServicioVista.bind(fila, a.pagoServicio);
+                continue;
+            }
             if (a.cambioCripto != null) {
                 FilaCambioCriptoVista.bind(fila, a.cambioCripto);
                 continue;

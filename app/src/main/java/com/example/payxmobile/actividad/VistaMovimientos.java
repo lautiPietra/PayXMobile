@@ -27,6 +27,9 @@ public final class VistaMovimientos {
     public static final String MSG_SIN_RESULTADOS = "No hay movimientos en ese rango de fechas.";
     public static final String MSG_SIN_RESULTADOS_MONEDA = "No hay movimientos en esa moneda.";
     public static final String MSG_SIN_RESULTADOS_MONEDA_Y_FECHA = "No hay movimientos en esa moneda en ese rango de fechas.";
+    // "Plazos fijos", "Cajas de ahorro" y "Servicios" son tipos, no monedas (mismos textos que la web para el filtro por tipo)
+    public static final String MSG_SIN_RESULTADOS_TIPO = "No hay movimientos de ese tipo.";
+    public static final String MSG_SIN_RESULTADOS_TIPO_Y_FECHA = "No hay movimientos de ese tipo en ese rango de fechas.";
     public static final String MSG_TOPE = "Tenés muchísimas transferencias: se muestran las 2.000 más recientes.";
 
     public final Modo modo;
@@ -121,7 +124,9 @@ public final class VistaMovimientos {
                 ? filtradas.size() + " de " + todas.size() + (todas.size() == 1 ? " movimiento" : " movimientos")
                 : null;
         String sinResultados = null;
-        if (filtradas.isEmpty()) {
+        if (filtradas.isEmpty() && filtroMoneda.esTipo()) {
+            sinResultados = hayFiltroFecha ? MSG_SIN_RESULTADOS_TIPO_Y_FECHA : MSG_SIN_RESULTADOS_TIPO;
+        } else if (filtradas.isEmpty()) {
             sinResultados = hayFiltroMoneda && hayFiltroFecha ? MSG_SIN_RESULTADOS_MONEDA_Y_FECHA
                     : hayFiltroMoneda ? MSG_SIN_RESULTADOS_MONEDA
                     : MSG_SIN_RESULTADOS;
@@ -138,7 +143,7 @@ public final class VistaMovimientos {
         return inicio(estado, null);
     }
 
-    /** Inicio con el feed ya construido (transferencias + dólares). */
+    /** Inicio con el feed ya construido (todos los tipos). */
     public static VistaMovimientos inicio(TransferenciasRepository.Estado estado, List<Actividad> construidas) {
         // el día no importa sin filtros
         VistaMovimientos v = de(estado, construidas, null, null, FiltroMoneda.TODAS, 1, ZoneId.of("UTC"));

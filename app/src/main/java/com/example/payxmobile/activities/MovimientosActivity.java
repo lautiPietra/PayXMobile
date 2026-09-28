@@ -27,6 +27,9 @@ import com.example.payxmobile.actividad.MovimientosViewModel;
 import com.example.payxmobile.actividad.VistaMovimientos;
 import com.example.payxmobile.actividad.FeedCombinado;
 import com.example.payxmobile.actividad.ListaRemota;
+import com.example.payxmobile.cajas.MovimientoCaja;
+import com.example.payxmobile.cajas.MovimientosCajaSesion;
+import com.example.payxmobile.cajas.ui.FilaMovimientoCajaVista;
 import com.example.payxmobile.cripto.CambiosCriptoRepository;
 import com.example.payxmobile.cripto.ui.FilaCambioCriptoVista;
 import com.example.payxmobile.model.OperacionCriptoResponse;
@@ -34,7 +37,13 @@ import com.example.payxmobile.dolares.CambiosDolaresRepository;
 import com.example.payxmobile.dolares.ui.FilaCambioDolaresVista;
 import com.example.payxmobile.model.OperacionCambioResponse;
 import com.example.payxmobile.model.TransferenciaResponse;
+import com.example.payxmobile.model.FacturaResponse;
+import com.example.payxmobile.model.PlazoFijoResponse;
+import com.example.payxmobile.servicios.ServiciosRepository;
+import com.example.payxmobile.servicios.ui.FilaPagoServicioVista;
 import com.example.payxmobile.notificaciones.ui.CampanaNotificaciones;
+import com.example.payxmobile.plazofijo.PlazosFijosRepository;
+import com.example.payxmobile.plazofijo.ui.FilaPlazoFijoVista;
 import com.example.payxmobile.transferencias.Refrescos;
 import com.example.payxmobile.transferencias.TransferenciasRepository;
 import com.example.payxmobile.transferencias.ui.DetalleTransferenciaSheet;
@@ -58,8 +67,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * "Mis movimientos" (Movimientos.jsx de la web): todas las transferencias con filtro por moneda
- * (pesos / dólares / cripto), por fecha (día LOCAL, extremos incluidos) y paginación local de a 100. Lee del mismo
+ * "Mis movimientos" (Movimientos.jsx de la web): transferencias, dólares, cripto y plazos fijos con
+ * filtro por moneda (pesos / dólares / cripto) o tipo (plazos fijos), por fecha (día LOCAL, extremos incluidos) y paginación local de a 100. Lee del mismo
  * TransferenciasRepository que Inicio: un solo polling compartido, solo en primer plano.
  */
 public class MovimientosActivity extends AppCompatActivity {
@@ -82,8 +91,28 @@ public class MovimientosActivity extends AppCompatActivity {
         operacionesCripto = e.lista;
         if (estado != null) onEstado(estado);
     };
+    // Plazos fijos: cada uno suma su alta y, si venció, su acreditación
+    private ListaRemota<PlazoFijoResponse> plazosRepo;
+    private final ListaRemota.Observador<PlazoFijoResponse> observadorPlazos = e -> {
+        plazosFijos = e.lista;
+        if (estado != null) onEstado(estado);
+    };
     private List<OperacionCambioResponse> cambios;
     private List<OperacionCriptoResponse> operacionesCripto;
+    private List<PlazoFijoResponse> plazosFijos;
+    // Depósitos/retiros de cajas: solo los vistos en esta sesión (el backend no tiene historial)
+    private final MovimientosCajaSesion.Observador observadorCajas = l -> {
+        movimientosCaja = l;
+        if (estado != null) onEstado(estado);
+    };
+    private List<MovimientoCaja> movimientosCaja;
+    // Pagos de servicios: las facturas PAGADAS del historial completo (persistente, sin polling)
+    private ListaRemota<FacturaResponse> facturasRepo;
+    private final ListaRemota.Observador<FacturaResponse> observadorFacturas = e -> {
+        facturas = e.lista;
+        if (estado != null) onEstado(estado);
+    };
+    private List<FacturaResponse> facturas;
     // El feed se arma una vez por cada lista nueva de algún repositorio; los filtros lo reusan
     private final FeedCombinado feedCombinado = new FeedCombinado();
     private List<Actividad> actividades;
@@ -108,7 +137,9 @@ public class MovimientosActivity extends AppCompatActivity {
         repo = TransferenciasRepository.get(this);
         cambiosRepo = CambiosDolaresRepository.get(this);
         criptoRepo = CambiosCriptoRepository.get(this);
-        detalle = new DetalleTransferenciaSheet(this);
+        plazosRepo = PlazosFijosRepository.get(this);
+        facturasRepo = ServiciosRepository.historial(this);
+        detalle =new DetalleTransferenciaSheet(this);
         filtros = new ViewModelProvider(this).get(MovimientosViewModel.class);
         if (savedInstanceState != null) {
             // Muerte del proceso: el ViewModel vuelve vacío, se restaura desde el Bundle
@@ -147,6 +178,11 @@ public class MovimientosActivity extends AppCompatActivity {
         cambiosRepo.iniciarAutoRefresco();
         criptoRepo.observar(observadorCripto);
         criptoRepo.iniciarAutoRefresco();
+        plazosRepo.observar(observadorPlazos);
+        plazosRepo.iniciarAutoRefresco();
+        MovimientosCajaSesion.get(this).observar(observadorCajas);
+        facturasRepo.observar(observadorFacturas);
+        facturasRepo.refrescar(); // al entrar (el historial cambia poco: sin polling)
     }
 
     @Override
@@ -164,6 +200,10 @@ public class MovimientosActivity extends AppCompatActivity {
         cambiosRepo.dejarDeObservar(observadorCambios);
         criptoRepo.detenerAutoRefresco();
         criptoRepo.dejarDeObservar(observadorCripto);
+        plazosRepo.detenerAutoRefresco();
+        plazosRepo.dejarDeObservar(observadorPlazos);
+        MovimientosCajaSesion.get(this).dejarDeObservar(observadorCajas);
+        facturasRepo.dejarDeObservar(observadorFacturas);
     }
 
     @Override
@@ -189,7 +229,7 @@ public class MovimientosActivity extends AppCompatActivity {
             pullEnCurso = false;
             swipeRefresh.setRefreshing(false);
         }
-        actividades = feedCombinado.de(e.lista, cambios, operacionesCripto);
+        actividades = feedCombinado.de(e.lista, cambios, operacionesCripto, plazosFijos, movimientosCaja, facturas);
         render();
         if (detalleARestaurar != null && e.lista != null) {
             TransferenciaResponse t = e.buscar(detalleARestaurar);
@@ -426,6 +466,18 @@ public class MovimientosActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
             Actividad a = getItem(position);
+            if (a.plazoFijo != null) {
+                FilaPlazoFijoVista.bind(holder.itemView, a);
+                return;
+            }
+            if (a.movimientoCaja != null) {
+                FilaMovimientoCajaVista.bind(holder.itemView, a.movimientoCaja);
+                return;
+            }
+            if (a.pagoServicio != null) {
+                FilaPagoServicioVista.bind(holder.itemView, a.pagoServicio);
+                return;
+            }
             if (a.cambioCripto != null) {
                 FilaCambioCriptoVista.bind(holder.itemView, a.cambioCripto);
                 return;

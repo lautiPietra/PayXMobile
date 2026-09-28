@@ -20,8 +20,9 @@ import retrofit2.Response;
  * y plazos fijos después). Mismo comportamiento que TransferenciasRepository:
  * - Auto-refresco cada 10 s solo mientras alguna pantalla lo pide, sin solapar pedidos.
  * - Si un refresco falla se mantiene la última lista buena.
- * - {@link #agregar} muestra al instante una operación recién hecha (la que devolvió el POST); una
- *   lista pedida ANTES se descarta y se vuelve a pedir, para que no la haga desaparecer.
+ * - {@link #agregar}, {@link #actualizar} y {@link #quitar} muestran al instante una operación recién
+ *   hecha (lo que devolvió el backend); una lista pedida ANTES se descarta y se vuelve a pedir, para
+ *   que no la deshaga.
  */
 public class ListaRemota<T> {
 
@@ -142,6 +143,43 @@ public class ListaRemota<T> {
             List<T> copia = new ArrayList<>(lista.size() + 1);
             copia.add(nuevo);
             copia.addAll(lista);
+            lista = Collections.unmodifiableList(copia);
+        }
+        notificar();
+    }
+
+    /**
+     * Reemplaza (en su lugar) el elemento con el mismo id por la versión que devolvió el backend, o
+     * lo agrega AL FINAL si no estaba (listas ordenadas de la más vieja a la más nueva, ej. cajas).
+     */
+    public void actualizar(T nuevo) {
+        synchronized (this) {
+            if (nuevo == null || lista == null) return;
+            String clave = id.apply(nuevo);
+            List<T> copia = new ArrayList<>(lista);
+            boolean reemplazado = false;
+            for (int i = 0; i < copia.size(); i++) {
+                if (clave != null && clave.equals(id.apply(copia.get(i)))) {
+                    copia.set(i, nuevo);
+                    reemplazado = true;
+                    break;
+                }
+            }
+            if (!reemplazado) copia.add(nuevo);
+            cambiosLocales++;
+            lista = Collections.unmodifiableList(copia);
+        }
+        notificar();
+    }
+
+    /** Saca el elemento con ese id (ej. una caja recién eliminada). */
+    public void quitar(String clave) {
+        synchronized (this) {
+            if (clave == null || lista == null) return;
+            List<T> copia = new ArrayList<>(lista.size());
+            for (T t : lista) if (!clave.equals(id.apply(t))) copia.add(t);
+            if (copia.size() == lista.size()) return;
+            cambiosLocales++;
             lista = Collections.unmodifiableList(copia);
         }
         notificar();

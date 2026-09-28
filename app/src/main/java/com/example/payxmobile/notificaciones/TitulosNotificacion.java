@@ -31,6 +31,16 @@ public final class TitulosNotificacion {
         // Cripto (el "mensaje" ya dice qué símbolo era)
         t.put("CRIPTO_COMPRADA", "Compra de cripto");
         t.put("CRIPTO_VENDIDA", "Venta de cripto");
+        // Plazos fijos (el vencimiento lo genera el backend solo al acreditar)
+        t.put("PLAZO_FIJO_CONSTITUIDO", "Plazo fijo constituido");
+        t.put("PLAZO_FIJO_VENCIDO", "Plazo fijo acreditado");
+        // Cajas de ahorro (un depósito que llega a la meta genera DOS: depósito + meta alcanzada).
+        // La web todavía no tiene título para META_ALCANZADA: este es propio de la app.
+        t.put("CAJA_AHORRO_DEPOSITO", "Depósito en caja de ahorro");
+        t.put("CAJA_AHORRO_RETIRO", "Retiro de caja de ahorro");
+        t.put("CAJA_AHORRO_META_ALCANZADA", "Meta alcanzada");
+        // Servicios (el mensaje ya trae el nombre del servicio y el monto)
+        t.put("SERVICIO_PAGADO", "Pago de servicio");
         TITULOS = Collections.unmodifiableMap(t);
     }
 

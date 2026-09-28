@@ -119,8 +119,7 @@ public class ActividadesTest {
             assertEquals(hoy, a.get(2).hasta);
             assertEquals(c[0] + " 30 días", LocalDate.parse(c[2]), a.get(3).desde);
             assertEquals(hoy, a.get(3).hasta);
-            assertEquals(c[0] + " mes", LocalDate.parse(c[3]), a.get(4).desde);
-            assertEquals(hoy, a.get(4).hasta);
+            assertEquals("solo Todo, Hoy, 7 días y 30 días (sin \"Este mes\")", 4, a.size());
         }
     }
 
@@ -137,7 +136,9 @@ public class ActividadesTest {
         List<Actividades.Atajo> a = Actividades.atajos(reloj("2026-09-24T12:00:00", BA), BA);
         assertEquals("todo", Actividades.atajoActivo(a, null, null).id);
         assertEquals("7", Actividades.atajoActivo(a, LocalDate.parse("2026-09-18"), LocalDate.parse("2026-09-24")).id);
-        assertEquals("mes", Actividades.atajoActivo(a, LocalDate.parse("2026-09-01"), LocalDate.parse("2026-09-24")).id);
+        assertEquals("30", Actividades.atajoActivo(a, LocalDate.parse("2026-08-26"), LocalDate.parse("2026-09-24")).id);
+        assertNull("del 1 del mes a hoy ya no es un atajo (se arma con Desde/Hasta)",
+                Actividades.atajoActivo(a, LocalDate.parse("2026-09-01"), LocalDate.parse("2026-09-24")));
         assertNull(Actividades.atajoActivo(a, LocalDate.parse("2026-09-18"), LocalDate.parse("2026-09-23")));
         assertNull(Actividades.atajoActivo(a, LocalDate.parse("2026-09-18"), null));
     }
@@ -304,6 +305,10 @@ public class ActividadesTest {
         assertEquals(Integer.valueOf(1), c.get(Actividad.Tipo.DOLARES));
         assertEquals(Integer.valueOf(2), c.get(Actividad.Tipo.CRIPTO));
         assertEquals("transferencias", Actividad.Tipo.TRANSFERENCIA.id);
-        assertEquals(4, Actividades.TIPOS_ACTIVIDAD.size());
+        assertEquals(Integer.valueOf(0), c.get(Actividad.Tipo.CAJA_AHORRO));
+        // Los 4 de la web (TIPOS_ACTIVIDAD) + "cajas-ahorro" y "servicios", propios de la app
+        assertEquals(6, Actividades.TIPOS_ACTIVIDAD.size());
+        assertEquals("cajas-ahorro", Actividades.TIPOS_ACTIVIDAD.get(4).id);
+        assertEquals("servicios", Actividades.TIPOS_ACTIVIDAD.get(5).id);
     }
 }

@@ -22,7 +22,16 @@ public class TitulosNotificacionTest {
         // C9: cripto, sin tocar la infraestructura
         assertEquals("Compra de cripto", TitulosNotificacion.de("CRIPTO_COMPRADA"));
         assertEquals("Venta de cripto", TitulosNotificacion.de("CRIPTO_VENDIDA"));
-        assertEquals(8, TitulosNotificacion.todos().size());
+        // P6: plazos fijos, también sin tocar la infraestructura
+        assertEquals("Plazo fijo constituido", TitulosNotificacion.de("PLAZO_FIJO_CONSTITUIDO"));
+        assertEquals("Plazo fijo acreditado", TitulosNotificacion.de("PLAZO_FIJO_VENCIDO"));
+        // K10: cajas de ahorro (META_ALCANZADA no tiene título en la web: es propio de la app)
+        assertEquals("Depósito en caja de ahorro", TitulosNotificacion.de("CAJA_AHORRO_DEPOSITO"));
+        assertEquals("Retiro de caja de ahorro", TitulosNotificacion.de("CAJA_AHORRO_RETIRO"));
+        assertEquals("Meta alcanzada", TitulosNotificacion.de("CAJA_AHORRO_META_ALCANZADA"));
+        // S8: servicios
+        assertEquals("Pago de servicio", TitulosNotificacion.de("SERVICIO_PAGADO"));
+        assertEquals(14, TitulosNotificacion.todos().size());
     }
 
     @Test

@@ -47,31 +47,104 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="16dp"
             android:text="Separá plata de tu saldo principal para cada objetivo"
             android:textColor="@color/text_secondary"
             android:textSize="13.5sp" />
 
-        <TextView
-            android:id="@+id/btnNuevaCaja"
-            android:layout_width="wrap_content"
+        <!-- ══ SALDO PRINCIPAL (de acá salen los depósitos) ══ -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
-            android:layout_marginBottom="24dp"
-            android:background="@drawable/bg_pill_pagar"
-            android:drawableStart="@drawable/ic_add"
-            android:drawablePadding="6dp"
-            android:drawableTint="@color/white"
-            android:gravity="center"
-            android:paddingHorizontal="18dp"
-            android:paddingVertical="12dp"
-            android:text="Nueva caja"
-            android:textColor="@color/white"
-            android:textSize="13.5sp"
-            android:textStyle="bold" />
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_saldo_disponible"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="14dp">
 
-        <!-- ══ VACÍO ══ -->
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginEnd="10dp"
+                android:src="@drawable/ic_wallet"
+                app:tint="@color/payx_orange" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Saldo disponible en tu cuenta"
+                android:textColor="@color/payx_orange"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvSaldoPrincipal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="—"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- ══ NUEVA CAJA + CONTADOR ══ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="14dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvContador"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/btnNuevaCaja"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_pill_pagar"
+                android:drawableStart="@drawable/ic_add"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/white"
+                android:gravity="center"
+                android:paddingHorizontal="18dp"
+                android:paddingVertical="12dp"
+                android:text="Nueva caja"
+                android:textColor="@color/white"
+                android:textSize="13.5sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Máximo de cajas (de GET /limite): se avisa ANTES de intentar -->
+        <TextView
+            android:id="@+id/tvAvisoLimite"
+            style="@style/TransferAvisoPendiente"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="14dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvDesactualizado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="12dp"
+            android:text="No pudimos actualizar tus cajas. Se muestran los últimos datos."
+            android:textColor="@color/text_hint"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <!-- ══ ESTADO: cargando / error / vacío ══ -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardEstado"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
@@ -88,7 +161,15 @@
                 android:orientation="vertical"
                 android:paddingVertical="40dp">
 
+                <ProgressBar
+                    android:id="@+id/progressEstado"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:layout_marginBottom="10dp"
+                    android:indeterminateTint="@color/payx_orange" />
+
                 <ImageView
+                    android:id="@+id/ivEstado"
                     android:layout_width="34dp"
                     android:layout_height="34dp"
                     android:layout_marginBottom="12dp"
@@ -96,13 +177,31 @@
                     app:tint="@color/text_hint" />
 
                 <TextView
+                    android:id="@+id/tvEstado"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Todavía no tenés cajas de ahorro"
+                    android:gravity="center"
+                    android:paddingHorizontal="24dp"
                     android:textColor="@color/text_hint"
                     android:textSize="13sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnReintentar"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Reintentar"
+                    android:textAllCaps="false"
+                    android:textColor="@color/payx_orange"
+                    android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+            android:id="@+id/listaCajas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

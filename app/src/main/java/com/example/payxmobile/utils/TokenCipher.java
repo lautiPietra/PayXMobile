@@ -13,10 +13,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
 /**
- * Cifra el JWT con una clave AES-GCM que vive en el Android Keystore (no se puede extraer).
+ * Cifra datos que la app guarda en el teléfono (el JWT y los movimientos de cajas de ahorro) con una
+ * clave AES-GCM que vive en el Android Keystore (no se puede extraer).
  * Equivalente a EncryptedSharedPreferences (deprecado) sin sumar dependencias.
  */
-final class TokenCipher {
+public final class TokenCipher {
 
     private static final String KEYSTORE = "AndroidKeyStore";
     private static final String ALIAS = "payx_token_key";
@@ -24,7 +25,7 @@ final class TokenCipher {
 
     private TokenCipher() {}
 
-    static String cifrar(String texto) throws Exception {
+    public static String cifrar(String texto) throws Exception {
         Cipher cipher = Cipher.getInstance(TRANSFORMACION);
         cipher.init(Cipher.ENCRYPT_MODE, obtenerClave());
         byte[] cifrado = cipher.doFinal(texto.getBytes(StandardCharsets.UTF_8));
@@ -32,7 +33,7 @@ final class TokenCipher {
                 + Base64.encodeToString(cifrado, Base64.NO_WRAP);
     }
 
-    static String descifrar(String guardado) throws Exception {
+    public static String descifrar(String guardado) throws Exception {
         String[] partes = guardado.split(":", 2);
         if (partes.length != 2) throw new IllegalArgumentException("Formato inválido");
         byte[] iv = Base64.decode(partes[0], Base64.NO_WRAP);

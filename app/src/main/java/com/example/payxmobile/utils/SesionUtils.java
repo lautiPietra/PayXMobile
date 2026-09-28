@@ -10,11 +10,15 @@ import androidx.credentials.CredentialManagerCallback;
 import androidx.credentials.exceptions.ClearCredentialException;
 
 import com.example.payxmobile.activities.LoginActivity;
+import com.example.payxmobile.cajas.CajasAhorroRepository;
+import com.example.payxmobile.cajas.MovimientosCajaSesion;
 import com.example.payxmobile.cripto.CambiosCriptoRepository;
 import com.example.payxmobile.dolares.CambiosDolaresRepository;
 import com.example.payxmobile.dolares.CotizacionDolarRepository;
 import com.example.payxmobile.notificaciones.NotificacionesRepository;
+import com.example.payxmobile.plazofijo.PlazosFijosRepository;
 import com.example.payxmobile.saldos.SaldosRepository;
+import com.example.payxmobile.servicios.ServiciosRepository;
 import com.example.payxmobile.transferencias.TransferenciasRepository;
 
 /** Cierre de sesión en un solo lugar (logout manual y sesión vencida). */
@@ -51,6 +55,11 @@ public final class SesionUtils {
         NotificacionesRepository.get(app).limpiar();
         CambiosDolaresRepository.get(app).limpiar();
         CambiosCriptoRepository.get(app).limpiar();
+        PlazosFijosRepository.get(app).limpiar();
+        CajasAhorroRepository.get(app).limpiar();
+        MovimientosCajaSesion.get(app).cerrarSesion(); // lo guardado queda para cuando vuelva
+        ServiciosRepository.catalogo(app).limpiar();
+        ServiciosRepository.historial(app).limpiar();
         CotizacionDolarRepository.get(app).limpiar();
 
         // Olvida la cuenta de Google elegida: el próximo login vuelve a mostrar el selector

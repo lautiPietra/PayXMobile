@@ -112,6 +112,20 @@
             android:screenOrientation="portrait" />
 
         <activity
+            android:name=".activities.EstadisticasActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.PagoServicioActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".activities.MontoCajaActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".activities.OperacionDolaresActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
