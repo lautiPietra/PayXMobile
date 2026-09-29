@@ -84,7 +84,7 @@ public class CajasContratoTest {
         });
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
-        api = RetrofitClient.crear(server.url("/").toString(), () -> token, System::currentTimeMillis,
+        api = RetrofitClient.crear(server.url("/").toString(), () -> token,
                 () -> {}, false, false);
         sesion = new MovimientosCajaSesion();
     }
@@ -269,9 +269,9 @@ public class CajasContratoTest {
     }
 
     @Test
-    public void k2_sinTextoDelBackend403VacioEsElGenerico() throws Exception {
-        // Un @Valid que falla en el backend cae en /error (con token): 403 sin body
-        responder("POST " + BASE, new MockResponse().setResponseCode(403));
+    public void k2_validacionDelBackendSinDetalleEsElGenerico() throws Exception {
+        // Un @Valid que falla: 400 "Datos invalidos"; sin detalle en "campos", el genérico
+        responder("POST " + BASE, new MockResponse().setResponseCode(400).setBody("{\"error\":\"Datos invalidos\",\"campos\":{}}"));
         FormularioCaja f = formulario(null);
         f.setNombre("Viaje");
         guardar(f);
@@ -633,7 +633,7 @@ public class CajasContratoTest {
         apagado.start();
         String url = apagado.url("/").toString();
         apagado.shutdown();
-        ApiService caido = RetrofitClient.crear(url, () -> "x", System::currentTimeMillis, () -> {}, false, false);
+        ApiService caido = RetrofitClient.crear(url, () -> "x", () -> {}, false, false);
         OperacionMontoCaja d = operacion(MovimientoCaja.Tipo.DEPOSITO, cajaObj("0", null), caido);
         d.setMonto("10");
         confirmar(d, new BigDecimal("100"));

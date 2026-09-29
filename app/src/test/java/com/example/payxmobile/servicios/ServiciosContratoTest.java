@@ -99,7 +99,7 @@ public class ServiciosContratoTest {
         });
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
-        api = RetrofitClient.crear(server.url("/").toString(), () -> token, System::currentTimeMillis, () -> {}, false, false);
+        api = RetrofitClient.crear(server.url("/").toString(), () -> token, () -> {}, false, false);
     }
 
     @After
@@ -317,7 +317,7 @@ public class ServiciosContratoTest {
         apagado.start();
         String url = apagado.url("/").toString();
         apagado.shutdown();
-        ApiService caido = RetrofitClient.crear(url, () -> "x", System::currentTimeMillis, () -> {}, false, false);
+        ApiService caido = RetrofitClient.crear(url, () -> "x", () -> {}, false, false);
         PagoFactura p = pago(caido);
         confirmar(p, "50000");
         assertEquals(ApiErrores.MSG_SIN_CONEXION, p.getError());
@@ -355,7 +355,7 @@ public class ServiciosContratoTest {
         assertEquals(VistaServicios.Modo.ERROR, v.modo);
         assertEquals(ApiErrores.MSG_SERVIDOR, v.error);
         assertEquals(VistaServicios.Modo.ERROR, v.modoHistorial);
-        assertEquals("403 sin body: mensaje, sin crash", ApiErrores.MSG_DATOS_INVALIDOS, v.errorHistorial);
+        assertEquals("403 sin body (sin permiso): mensaje, sin crash y la sesión sigue", ApiErrores.MSG_SIN_PERMISO, v.errorHistorial);
 
         // Reintentar
         responder("GET /api/facturas", json(200, CATALOGO));
@@ -374,7 +374,7 @@ public class ServiciosContratoTest {
         apagado.start();
         String url = apagado.url("/").toString();
         apagado.shutdown();
-        ApiService caido = RetrofitClient.crear(url, () -> "x", System::currentTimeMillis, () -> {}, false);
+        ApiService caido = RetrofitClient.crear(url, () -> "x", () -> {}, false);
         ListaRemota<ServicioConFacturaResponse> catalogo = new ListaRemota<>(() -> caido, ApiService::listarServicios,
                 ServicioConFacturaResponse::getServicioCodigo, (t, d) -> () -> {});
         catalogo.refrescar();

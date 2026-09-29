@@ -68,14 +68,14 @@ public class E2EBackendRealTest {
     }
 
     private static String token(String email) throws Exception {
-        ApiService sinToken = RetrofitClient.crear(URL, () -> null, System::currentTimeMillis, () -> {}, false);
+        ApiService sinToken = RetrofitClient.crear(URL, () -> null, () -> {}, false);
         Response<com.example.payxmobile.model.LoginResponse> r = sinToken.login(new LoginRequest(email, PASSWORD)).execute();
         assertTrue("login " + email + " -> " + r.code(), r.isSuccessful());
         return r.body().getToken();
     }
 
     private static ApiService conToken(String token, boolean reintentar) {
-        return RetrofitClient.crear(URL, () -> token, System::currentTimeMillis, () -> {}, false, reintentar);
+        return RetrofitClient.crear(URL, () -> token, () -> {}, false, reintentar);
     }
 
     private static PerfilResponse perfil(ApiService api) throws Exception {

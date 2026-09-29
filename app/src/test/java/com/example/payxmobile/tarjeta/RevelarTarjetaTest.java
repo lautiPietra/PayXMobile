@@ -36,7 +36,7 @@ public class RevelarTarjetaTest {
         server = new MockWebServer();
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
-        api = RetrofitClient.crear(server.url("/").toString(), () -> token, System::currentTimeMillis, () -> {}, false);
+        api = RetrofitClient.crear(server.url("/").toString(), () -> token, () -> {}, false);
     }
 
     @After
@@ -167,11 +167,21 @@ public class RevelarTarjetaTest {
         assertEquals(2, server.getRequestCount());
     }
 
-    // ── V6: 403, 5xx, sin conexión, respuesta rara ─────────────────────────────
+    // ── V6: 401, 403, 5xx, sin conexión, respuesta rara ─────────────────────────────
 
     @Test
-    public void v6_403SinBodyEsSesionInvalida() throws Exception {
-        server.enqueue(new MockResponse().setResponseCode(403));
+    public void v6_403SinPermisoEsUnErrorYNoCierraLaSesion() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(403).setBody("{\"error\":\"No tenes permiso para hacer esto\"}"));
+        RevelarTarjeta r403 = nueva();
+        revelarYEsperar(r403);
+        assertFalse(r403.isSesionInvalida());
+        assertEquals(RevelarTarjeta.Estado.ERROR, r403.getEstado());
+        assertEquals("No tenes permiso para hacer esto", r403.getError());
+    }
+
+    @Test
+    public void v6_401EsSesionInvalida() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(401).setBody("{\"error\":\"No autenticado (token ausente, invalido o vencido)\"}"));
         RevelarTarjeta r = nueva();
         revelarYEsperar(r);
         assertTrue("la pantalla cierra la sesión (una sola vez: SesionUtils ignora si ya no hay token)",
@@ -198,7 +208,7 @@ public class RevelarTarjetaTest {
         apagado.start();
         String url = apagado.url("/").toString();
         apagado.shutdown();
-        ApiService caido = RetrofitClient.crear(url, () -> "x", System::currentTimeMillis, () -> {}, false);
+        ApiService caido = RetrofitClient.crear(url, () -> "x", () -> {}, false);
         RevelarTarjeta r = nueva(caido);
         revelarYEsperar(r);
         assertEquals(ApiErrores.MSG_SIN_CONEXION, r.getError());

@@ -29,6 +29,7 @@ import com.example.payxmobile.network.ApiErrores;
 import com.example.payxmobile.network.RetrofitClient;
 import com.example.payxmobile.cajas.CajasAhorroRepository;
 import com.example.payxmobile.cajas.MovimientosCajaSesion;
+import com.example.payxmobile.asistente.ConversacionAsistente;
 import com.example.payxmobile.cripto.CambiosCriptoRepository;
 import com.example.payxmobile.dolares.CambiosDolaresRepository;
 import com.example.payxmobile.notificaciones.NotificacionesRepository;
@@ -274,6 +275,8 @@ public class LoginActivity extends AppCompatActivity {
         MovimientosCajaSesion.get(this).cerrarSesion();
         ServiciosRepository.catalogo(this).limpiar();
         ServiciosRepository.historial(this).limpiar();
+        // Siempre arranca vacía (cubre una sesión que venció con la app cerrada, sin pasar por el logout)
+        ConversacionAsistente.get(this).cerrarSesion();
         // No se llama a /api/notificaciones/registro-login: el backend ya crea la notificación INICIO_SES
         sessionManager.saveSession(
                 body.getToken(),

@@ -60,8 +60,8 @@ public class CambioDolaresTest {
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
         String url = server.url("/").toString();
-        api = RetrofitClient.crear(url, () -> token, System::currentTimeMillis, () -> {}, false, true);
-        apiSinReintentos = RetrofitClient.crear(url, () -> token, System::currentTimeMillis, () -> {}, false, false);
+        api = RetrofitClient.crear(url, () -> token, () -> {}, false, true);
+        apiSinReintentos = RetrofitClient.crear(url, () -> token, () -> {}, false, false);
     }
 
     @After
@@ -385,12 +385,12 @@ public class CambioDolaresTest {
     }
 
     @Test
-    public void d12_403VacioY429() throws Exception {
+    public void d12_validacionSinDetalleY429() throws Exception {
         CambioDolares c = listo(CambioDolares.Tipo.COMPRA, "100");
-        server.enqueue(new MockResponse().setResponseCode(403));
+        server.enqueue(new MockResponse().setResponseCode(400).setBody("{\"error\":\"Datos invalidos\",\"campos\":{}}"));
         c.continuar(SALDO_PESOS);
         c.confirmar();
-        esperar("403", () -> !c.isEnviando() && c.getError() != null);
+        esperar("400", () -> !c.isEnviando() && c.getError() != null);
         assertEquals(CambioDolares.MSG_NO_SE_PUDO, c.getError());
 
         server.enqueue(new MockResponse().setResponseCode(429));
@@ -465,7 +465,7 @@ public class CambioDolaresTest {
         apagado.start();
         String url = apagado.url("/").toString();
         apagado.shutdown();
-        ApiService caido = RetrofitClient.crear(url, () -> "x", System::currentTimeMillis, () -> {}, false, false);
+        ApiService caido = RetrofitClient.crear(url, () -> "x", () -> {}, false, false);
         CambioDolares c = new CambioDolares(CambioDolares.Tipo.COMPRA, () -> api, () -> caido, refrescos::incrementAndGet);
         server.enqueue(new MockResponse().setBody(COTIZACION));
         c.cargarCotizacion();

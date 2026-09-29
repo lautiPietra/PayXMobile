@@ -17,7 +17,7 @@ import retrofit2.Response;
  *   ni esta pantalla). Ocultar/mostrar de nuevo no repite el pedido.
  * - {@link #olvidar()} descarta los datos (al salir de la pantalla): al volver hay que pedirlos otra vez.
  * - 429: la ventana del backend es de 1 minuto, así que se bloquea el reintento 60 s.
- * - 403: token inválido/vencido o cuenta desactivada -> la pantalla cierra la sesión.
+ * - 401: sin sesión válida -> la pantalla cierra la sesión (el interceptor también). 403: error normal.
  * Nada de esto se loguea ni se guarda fuera de memoria. Sin Android: vive en un ViewModel.
  */
 public class RevelarTarjeta {
@@ -90,7 +90,9 @@ public class RevelarTarjeta {
                     } else if (response.code() == 429) {
                         rateLimitDesde = reloj.getAsLong();
                         fallo(MSG_RATE_LIMIT);
-                    } else if (response.code() == 401 || response.code() == 403) {
+                    } else if (response.code() == 403) {
+                        fallo(ApiErrores.mensaje(response)); // sin permiso: error normal, la sesión sigue
+                    } else if (response.code() == 401) {
                         sesionInvalida = true;
                         fallo(MSG_ERROR);
                     } else if (response.code() >= 500) {

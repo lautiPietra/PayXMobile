@@ -81,7 +81,7 @@ public class OperacionCriptoTest {
         server = new MockWebServer();
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
-        apiSinReintentos = RetrofitClient.crear(server.url("/").toString(), () -> token, System::currentTimeMillis,
+        apiSinReintentos = RetrofitClient.crear(server.url("/").toString(), () -> token,
                 () -> {}, false, false);
     }
 
@@ -305,12 +305,12 @@ public class OperacionCriptoTest {
     }
 
     @Test
-    public void c5_simboloInvalidoForzadoEs403VacioYMensajeGenerico() throws Exception {
-        // El @Valid del backend rechaza un símbolo inválido con 403 SIN body (la app no puede mandarlo:
+    public void c5_validacionSinDetalleEsMensajeGenerico() throws Exception {
+        // El @Valid del backend rechaza un símbolo inválido con 400 "Datos invalidos" (la app no puede mandarlo:
         // Moneda solo tiene los 6; se simula la respuesta)
         OperacionCripto op = nueva(OperacionCripto.Tipo.COMPRA);
         op.setMonto("100");
-        server.enqueue(new MockResponse().setResponseCode(403));
+        server.enqueue(new MockResponse().setResponseCode(400).setBody("{\"error\":\"Datos invalidos\",\"campos\":{}}"));
         operar(op);
         assertEquals(OperacionCripto.MSG_NO_SE_PUDO, op.getError());
         server.enqueue(new MockResponse().setResponseCode(429));
@@ -474,7 +474,7 @@ public class OperacionCriptoTest {
         apagado.start();
         String url = apagado.url("/").toString();
         apagado.shutdown();
-        ApiService caido = RetrofitClient.crear(url, () -> "x", System::currentTimeMillis, () -> {}, false, false);
+        ApiService caido = RetrofitClient.crear(url, () -> "x", () -> {}, false, false);
         OperacionCripto op = nueva(OperacionCripto.Tipo.COMPRA, caido);
         op.setMonto("100");
         operar(op);

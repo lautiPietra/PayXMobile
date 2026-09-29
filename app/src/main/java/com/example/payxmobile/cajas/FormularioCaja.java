@@ -20,8 +20,8 @@ import retrofit2.Response;
  * Crear o editar una caja de ahorro (CajaAhorroModal.jsx): nombre, color e ícono de las
  * whitelists, y meta opcional.
  *
- * - La validación local es la ÚNICA que da textos claros: si falla un @Valid del backend responde
- *   403 sin body (su /error exige token), no "El nombre es obligatorio".
+ * - La validación local se hace igual antes de mandar (mismos textos que el backend); si igual falla un
+ *   @Valid, el 400 trae "campos" y ApiErrores muestra ese detalle.
  * - Crear: el máximo de cajas viene de GET /limite (lo configura el admin); con el máximo alcanzado
  *   no se manda el POST. Igual se maneja el 400 por si el límite cambió justo antes.
  * - Editar: la meta en blanco se manda como null EXPLÍCITO (= quitarla).

@@ -55,7 +55,7 @@ public class RegistroActivity extends AppCompatActivity {
         // La contraseña no se recorta (igual que la web)
         String password = etPassword.getText() != null ? etPassword.getText().toString() : "";
 
-        // Mismas reglas que RegistroRequest del backend: si no se cumplen responde 403 vacío
+        // Mismas reglas que RegistroRequest del backend (si no se cumplen responde 400 con "campos")
         boolean hayError = CamposUi.error(etNombreCompleto, Validadores.nombreCompleto(nombre));
         hayError |= CamposUi.error(etEmail, Validadores.email(email));
         hayError |= CamposUi.error(etTelefono, Validadores.telefono(telefono));

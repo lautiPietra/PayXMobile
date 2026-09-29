@@ -51,7 +51,7 @@ public final class EnvioSinReintento {
     }
 
     /**
-     * Sin {"error"} en el body (un @Valid que falla termina en /error, que exige token: 403 vacío)
+     * Sin texto útil del backend (400 sin "campos" ni "error", body vacío)
      * no hay texto útil del backend: se usa el genérico de la operación, como la web.
      */
     public static String textoRechazo(String mensaje, String generico) {

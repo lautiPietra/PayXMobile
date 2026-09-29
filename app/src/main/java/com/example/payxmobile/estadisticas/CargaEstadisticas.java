@@ -97,7 +97,9 @@ public class CargaEstadisticas {
                         fallo(ApiErrores.MSG_RESPUESTA_INESPERADA);
                     } else if (response.code() == 429) {
                         fallo(MSG_RATE_LIMIT);
-                    } else if (response.code() == 401 || response.code() == 403) {
+                    } else if (response.code() == 403) {
+                        fallo(ApiErrores.mensaje(response)); // sin permiso: error normal, la sesión sigue
+                    } else if (response.code() == 401) {
                         sesionInvalida = true;
                         fallo(MSG_ERROR);
                     } else if (response.code() >= 500) {

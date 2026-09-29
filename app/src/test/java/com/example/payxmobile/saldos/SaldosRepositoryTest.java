@@ -103,7 +103,7 @@ public class SaldosRepositoryTest {
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
         ApiService api = RetrofitClient.crear(server.url("/").toString(), () -> token,
-                System::currentTimeMillis, () -> {}, false);
+                () -> {}, false);
         reloj = new ProgramadorFalso();
         repo = new SaldosRepository(() -> api, reloj);
     }
@@ -186,7 +186,7 @@ public class SaldosRepositoryTest {
         apagado.start();
         String url = apagado.url("/").toString();
         apagado.shutdown();
-        ApiService sinBackend = RetrofitClient.crear(url, () -> "x", System::currentTimeMillis, () -> {}, false);
+        ApiService sinBackend = RetrofitClient.crear(url, () -> "x", () -> {}, false);
         SaldosRepository sinConexion = new SaldosRepository(() -> sinBackend, reloj);
         sinConexion.refrescar();
         esperar("fallo de conexión", () -> !sinConexion.getEstado().cargandoSaldo);
@@ -195,7 +195,7 @@ public class SaldosRepositoryTest {
 
         // Timeout: el servidor acepta pero nunca responde
         responder(PERFIL, new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
-        ApiService lento = RetrofitClient.crear(server.url("/").toString(), () -> "x", System::currentTimeMillis, () -> {}, false);
+        ApiService lento = RetrofitClient.crear(server.url("/").toString(), () -> "x", () -> {}, false);
         SaldosRepository conTimeout = new SaldosRepository(() -> conTimeoutCorto(lento), reloj);
         conTimeout.refrescar();
         esperar("timeout", () -> !conTimeout.getEstado().cargandoSaldo);
@@ -223,8 +223,8 @@ public class SaldosRepositoryTest {
     }
 
     @Test
-    public void s6_forbiddenEnPerfilEsSesionInvalidaYCortaElAutoRefresco() throws Exception {
-        responder(PERFIL, new MockResponse().setResponseCode(403));
+    public void s6_401EnPerfilEsSesionInvalidaYCortaElAutoRefresco() throws Exception {
+        responder(PERFIL, new MockResponse().setResponseCode(401).setBody("{\"error\":\"No autenticado (token ausente, invalido o vencido)\"}"));
         responder(COTIZ, new MockResponse().setBody(COTIZACIONES_OK));
         repo.iniciarAutoRefresco();
         esperarQuieto();
@@ -232,6 +232,16 @@ public class SaldosRepositoryTest {
         reloj.avanzar(60_000);
         Thread.sleep(200);
         assertEquals("sin bucle de reintentos", 1, pedidosA(PERFIL));
+    }
+
+    @Test
+    public void s6_403EnPerfilEsUnErrorNormalYNoCortaNada() throws Exception {
+        responder(PERFIL, new MockResponse().setResponseCode(403).setBody("{\"error\":\"No tenes permiso para hacer esto\"}"));
+        responder(COTIZ, new MockResponse().setBody(COTIZACIONES_OK));
+        repo.refrescarTodo();
+        esperarQuieto();
+        assertFalse("403 = sin permiso: la sesión sigue", repo.getEstado().sesionInvalida);
+        assertEquals("No tenes permiso para hacer esto", repo.getEstado().errorPrimeraCarga);
     }
 
     @Test

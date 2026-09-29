@@ -23,7 +23,7 @@ public final class EstadoSaldos {
     public final Map<String, CotizacionCripto> cotizaciones;
     public final boolean cargandoSaldo;
     public final boolean cargandoCotizaciones;
-    /** El backend respondió 403 al pedir el perfil: token inválido/vencido o cuenta desactivada. */
+    /** El backend respondió 401 al pedir el perfil: token inválido/vencido o cuenta desactivada. */
     public final boolean sesionInvalida;
     /**
      * El último GET de cotizaciones cripto respondió 503: el backend no tiene NINGUNA. El ticker de

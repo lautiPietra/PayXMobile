@@ -56,7 +56,7 @@ public class CargaEstadisticasTest {
         });
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
-        api = RetrofitClient.crear(server.url("/").toString(), () -> token, System::currentTimeMillis, () -> {}, false);
+        api = RetrofitClient.crear(server.url("/").toString(), () -> token, () -> {}, false);
     }
 
     @After
@@ -159,8 +159,18 @@ public class CargaEstadisticasTest {
     }
 
     @Test
-    public void e7_403SinBodyEsSesionInvalida() throws Exception {
-        responder(30, new MockResponse().setResponseCode(403));
+    public void e7_403SinPermisoEsUnErrorYNoCierraLaSesion() throws Exception {
+        responder(30, new MockResponse().setResponseCode(403).setBody("{\"error\":\"No tenes permiso para hacer esto\"}"));
+        CargaEstadisticas c403 = nueva();
+        c403.refrescar();
+        listo(c403);
+        assertFalse(c403.isSesionInvalida());
+        assertEquals("No tenes permiso para hacer esto", c403.getError());
+    }
+
+    @Test
+    public void e7_401EsSesionInvalida() throws Exception {
+        responder(30, new MockResponse().setResponseCode(401).setBody("{\"error\":\"No autenticado (token ausente, invalido o vencido)\"}"));
         CargaEstadisticas c = nueva();
         c.refrescar();
         listo(c);
@@ -182,7 +192,7 @@ public class CargaEstadisticasTest {
         apagado.start();
         String url = apagado.url("/").toString();
         apagado.shutdown();
-        ApiService caido = RetrofitClient.crear(url, () -> "x", System::currentTimeMillis, () -> {}, false);
+        ApiService caido = RetrofitClient.crear(url, () -> "x", () -> {}, false);
         CargaEstadisticas sinRed = nueva(caido);
         sinRed.refrescar();
         listo(sinRed);

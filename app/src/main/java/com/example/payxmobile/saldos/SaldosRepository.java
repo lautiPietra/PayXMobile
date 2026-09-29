@@ -235,8 +235,9 @@ public class SaldosRepository {
                         perfil = response.body();
                         errorPrimeraCarga = null;
                         desactualizado = false;
-                    } else if (response.code() == 403) {
-                        // GET sin body: 403 = token inválido/vencido o cuenta desactivada
+                    } else if (response.code() == 401) {
+                        // 401 = sin sesión válida (token vencido/inválido o cuenta desactivada): el interceptor
+                        // ya cierra la sesión; acá solo se corta el polling. Un 403 (sin permiso) es un error más.
                         sesionInvalida = true;
                         pedidosDeAutoRefresco = 0;
                         cortarTimers();

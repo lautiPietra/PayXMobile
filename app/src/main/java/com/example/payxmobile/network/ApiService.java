@@ -1,6 +1,8 @@
 package com.example.payxmobile.network;
 
 import com.example.payxmobile.model.ActualizarPerfilRequest;
+import com.example.payxmobile.model.AsistenteMensajeRequest;
+import com.example.payxmobile.model.AsistenteRespuestaResponse;
 import com.example.payxmobile.model.CajaAhorroRequest;
 import com.example.payxmobile.model.CajaAhorroResponse;
 import com.example.payxmobile.model.CambiarPasswordRequest;
@@ -223,4 +225,10 @@ public interface ApiService {
 
     @PATCH("api/notificaciones/leer")
     Call<Void> marcarTodasLeidas();
+
+    // ── Asistente de IA. Puede tardar varios segundos (consulta datos o prepara una transferencia antes
+    // de contestar): usarlo con RetrofitClient.getServiceAsistente (lectura larga, sin reintentos). ──
+
+    @POST("api/asistente/mensaje")
+    Call<AsistenteRespuestaResponse> enviarMensajeAsistente(@Body AsistenteMensajeRequest request);
 }

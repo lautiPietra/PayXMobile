@@ -178,7 +178,7 @@ public class VistaYFeedCajasTest {
         sesion.registrar(m); // repetido: no duplica
         assertEquals(2, avisos.get());
         assertEquals(1, combinado.de(t, null, null, null, sesion.getLista()).size());
-        sesion.limpiar(); // cerrar sesión
+        sesion.cerrarSesion();
         assertTrue(sesion.getLista().isEmpty());
         assertEquals(0, combinado.de(t, null, null, null, sesion.getLista()).size());
     }

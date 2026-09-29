@@ -52,13 +52,13 @@ public class E2EEstadisticasRealTest {
         aliasA = requerida("PAYX_E2E_ALIAS_A");
         aliasB = requerida("PAYX_E2E_ALIAS_B");
         String jwtA = token(emailA, password), jwtB = token(emailB, password);
-        apiA = RetrofitClient.crear(URL, () -> jwtA, System::currentTimeMillis, () -> {}, false, true);
-        apiASinReintentos = RetrofitClient.crear(URL, () -> jwtA, System::currentTimeMillis, () -> {}, false, false);
-        apiBSinReintentos = RetrofitClient.crear(URL, () -> jwtB, System::currentTimeMillis, () -> {}, false, false);
+        apiA = RetrofitClient.crear(URL, () -> jwtA, () -> {}, false, true);
+        apiASinReintentos = RetrofitClient.crear(URL, () -> jwtA, () -> {}, false, false);
+        apiBSinReintentos = RetrofitClient.crear(URL, () -> jwtB, () -> {}, false, false);
     }
 
     private static String token(String email, String password) throws Exception {
-        ApiService sinToken = RetrofitClient.crear(URL, () -> null, System::currentTimeMillis, () -> {}, false);
+        ApiService sinToken = RetrofitClient.crear(URL, () -> null, () -> {}, false);
         Response<LoginResponse> r = sinToken.login(new LoginRequest(email, password)).execute();
         assertTrue("login -> " + r.code(), r.isSuccessful());
         return r.body().getToken();

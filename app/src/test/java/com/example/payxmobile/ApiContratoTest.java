@@ -41,7 +41,7 @@ import retrofit2.Response;
 
 /**
  * Contrato HTTP de la app contra un backend simulado: método, path, headers y body de cada
- * request, y cómo se interpreta cada respuesta (200 / 401 JSON / 403 vacío / 429 / 400 / 5xx / timeout).
+ * request, y cómo se interpreta cada respuesta (200 / 401 / 403 / 429 / 400 con campos / 5xx / timeout).
  */
 public class ApiContratoTest {
 
@@ -75,7 +75,7 @@ public class ApiContratoTest {
     }
 
     private ApiService api() {
-        return RetrofitClient.crear(server.url("/").toString(), () -> token, () -> AHORA_MS,
+        return RetrofitClient.crear(server.url("/").toString(), () -> token,
                 sesionesVencidas::incrementAndGet, false);
     }
 
@@ -146,7 +146,7 @@ public class ApiContratoTest {
     @Test
     public void a9_timeoutEsFalloAmigable() {
         server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
-        ApiService lento = RetrofitClient.crear(server.url("/").toString(), () -> null, () -> AHORA_MS, () -> {}, false);
+        ApiService lento = RetrofitClient.crear(server.url("/").toString(), () -> null, () -> {}, false);
         try {
             // crear() usa 30 s de read timeout; acá se fuerza uno corto con la llamada cancelada por tiempo
             retrofit2.Call<LoginResponse> call = lento.login(new LoginRequest("a@b.co", "x"));
@@ -164,7 +164,7 @@ public class ApiContratoTest {
         String url = server.url("/").toString();
         server.shutdown();
         try {
-            RetrofitClient.crear(url, () -> null, () -> AHORA_MS, () -> {}, false)
+            RetrofitClient.crear(url, () -> null, () -> {}, false)
                     .login(new LoginRequest("a@b.co", "x")).execute();
             fail("debería haber fallado");
         } catch (IOException e) {
@@ -248,26 +248,42 @@ public class ApiContratoTest {
     // ── D) Sesión ───────────────────────────────────────────────────────────
 
     @Test
-    public void d3_forbiddenVacioConTokenVigenteNoEsSesionVencida() throws Exception {
-        token = JwtFalso.conExp(AHORA_MS / 1000 + 7200);
-        server.enqueue(new MockResponse().setResponseCode(403));
-        Response<PerfilResponse> r = api().actualizarPerfil(
-                new ActualizarPerfilRequest("ana", "11 5555 1234", "alias.valido", null)).execute();
-        assertEquals(403, r.code());
-        assertEquals(ApiErrores.MSG_DATOS_INVALIDOS, ApiErrores.mensaje(r));
-        assertEquals(0, sesionesVencidas.get());
-    }
-
-    @Test
-    public void d3_forbiddenVacioConTokenVencidoDisparaSesionVencidaUnaVez() throws Exception {
-        token = JwtFalso.conExp(AHORA_MS / 1000 - 1);
-        server.enqueue(new MockResponse().setResponseCode(403));
+    public void d3_401EnUnPedidoAutenticadoCierraLaSesionUnaVez() throws Exception {
+        token = JwtFalso.conExp(AHORA_MS / 1000 + 7200); // el backend decide: acá lo da por inválido
+        server.enqueue(new MockResponse().setResponseCode(401)
+                .setBody("{\"error\":\"No autenticado (token ausente, invalido o vencido)\"}"));
         api().obtenerPerfil().execute();
         assertEquals(1, sesionesVencidas.get());
     }
 
     @Test
-    public void d3_otrosErroresConTokenVencidoNoDisparanNada() throws Exception {
+    public void d3_403SinPermisoNoCierraLaSesionYMuestraElError() throws Exception {
+        token = JwtFalso.conExp(AHORA_MS / 1000 + 7200);
+        server.enqueue(new MockResponse().setResponseCode(403).setBody("{\"error\":\"No tenes permiso para hacer esto\"}"));
+        Response<PerfilResponse> r = api().actualizarPerfil(
+                new ActualizarPerfilRequest("ana", "11 5555 1234", "alias.valido", null)).execute();
+        assertEquals(403, r.code());
+        assertEquals("No tenes permiso para hacer esto", ApiErrores.mensaje(r));
+        // Ni siquiera con el token vencido según el reloj local: el que manda es el 401 del backend
+        token = JwtFalso.conExp(AHORA_MS / 1000 - 1);
+        server.enqueue(new MockResponse().setResponseCode(403));
+        api().obtenerPerfil().execute();
+        assertEquals(0, sesionesVencidas.get());
+    }
+
+    @Test
+    public void d3_400DeValidacionMuestraLosCamposYNoCierraLaSesion() throws Exception {
+        token = JwtFalso.conExp(AHORA_MS / 1000 + 7200);
+        server.enqueue(new MockResponse().setResponseCode(400).setBody("{\"error\":\"Datos invalidos\","
+                + "\"campos\":{\"alias\":\"El alias debe tener entre 6 y 20 caracteres\"}}"));
+        Response<PerfilResponse> r = api().actualizarPerfil(
+                new ActualizarPerfilRequest("ana", "11 5555 1234", "corto", null)).execute();
+        assertEquals("El alias debe tener entre 6 y 20 caracteres", ApiErrores.mensaje(r));
+        assertEquals(0, sesionesVencidas.get());
+    }
+
+    @Test
+    public void d3_otrosErroresNoDisparanNada() throws Exception {
         token = JwtFalso.conExp(AHORA_MS / 1000 - 1);
         server.enqueue(new MockResponse().setResponseCode(500));
         api().obtenerPerfil().execute();

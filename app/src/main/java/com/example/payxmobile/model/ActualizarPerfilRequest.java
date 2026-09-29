@@ -5,7 +5,7 @@ public class ActualizarPerfilRequest {
     private String telefono;
     private String alias;
     // Solo se manda cuando la cuenta todavía no tiene DNI. Si es null, Gson omite el campo
-    // (nunca se manda dni:"", que no cumple el regex y da 403).
+    // (nunca se manda dni:"", que no cumple el regex y da 400).
     private String dni;
 
     public ActualizarPerfilRequest(String nombreUsuario, String telefono, String alias, String dni) {

@@ -69,7 +69,7 @@ public class MovimientosRepositorioTest {
         server = new MockWebServer();
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
-        api = RetrofitClient.crear(server.url("/").toString(), () -> token, System::currentTimeMillis, () -> {}, false);
+        api = RetrofitClient.crear(server.url("/").toString(), () -> token, () -> {}, false);
     }
 
     @After

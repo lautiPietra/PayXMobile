@@ -56,12 +56,12 @@ public class E2EPlazoFijoRealTest {
         assumeTrue("Definí PAYX_E2E=1 para correr contra el backend real", System.getenv("PAYX_E2E") != null);
         String email = requerida("PAYX_E2E_EMAIL_A");
         String password = requerida("PAYX_E2E_PASSWORD");
-        ApiService sinToken = RetrofitClient.crear(URL, () -> null, System::currentTimeMillis, () -> {}, false);
+        ApiService sinToken = RetrofitClient.crear(URL, () -> null, () -> {}, false);
         Response<LoginResponse> r = sinToken.login(new LoginRequest(email, password)).execute();
         assertTrue("login -> " + r.code(), r.isSuccessful());
         String token = r.body().getToken();
-        api = RetrofitClient.crear(URL, () -> token, System::currentTimeMillis, () -> {}, false, true);
-        apiSinReintentos = RetrofitClient.crear(URL, () -> token, System::currentTimeMillis, () -> {}, false, false);
+        api = RetrofitClient.crear(URL, () -> token, () -> {}, false, true);
+        apiSinReintentos = RetrofitClient.crear(URL, () -> token, () -> {}, false, false);
     }
 
     private static String env(String nombre, String porDefecto) {

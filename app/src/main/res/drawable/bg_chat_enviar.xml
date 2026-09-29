@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Botón enviar del chat: gris mientras no se puede mandar (vacío o esperando respuesta) -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <shape android:shape="oval">
+            <solid android:color="#2E2E2E" />
+        </shape>
+    </item>
+    <item>
+        <ripple android:color="#33FFFFFF">
+            <item>
+                <shape android:shape="oval">
+                    <solid android:color="@color/payx_orange" />
+                </shape>
+            </item>
+        </ripple>
+    </item>
+</selector>

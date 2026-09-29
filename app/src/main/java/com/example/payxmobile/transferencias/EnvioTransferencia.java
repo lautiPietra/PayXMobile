@@ -289,7 +289,7 @@ public class EnvioTransferencia {
 
     private static String mensajeError(Response<?> response, String porDefecto) {
         String mensaje = ApiErrores.mensaje(response);
-        // Sin {"error"} en el body (ej. 403 vacío por validación): el genérico de la web
+        // Sin texto útil del backend (400 sin detalle, body vacío): el genérico de la web
         boolean generico = mensaje.equals(ApiErrores.MSG_DATOS_INVALIDOS)
                 || mensaje.equals(ApiErrores.MSG_RESPUESTA_INESPERADA);
         return generico ? porDefecto : mensaje;

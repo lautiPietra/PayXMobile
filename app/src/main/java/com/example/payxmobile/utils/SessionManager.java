@@ -20,6 +20,8 @@ public class SessionManager {
 
     // Cache en memoria para no descifrar en cada request
     private static volatile String tokenEnMemoria;
+    // Guardar, borrar y renovar el token no se pisan (la renovación llega desde hilos de OkHttp)
+    private static final Object LOCK = new Object();
 
     private final SharedPreferences prefs;
 
@@ -40,16 +42,18 @@ public class SessionManager {
             // Sin Keystore no se guarda el token en disco: la sesión dura lo que dure el proceso
             cifrado = null;
         }
-        tokenEnMemoria = token;
-        prefs.edit()
-                .putString(KEY_TOKEN_CIFRADO, cifrado)
-                .putString(KEY_USER_ID, userId)
-                .putString(KEY_NOMBRE_COMPLETO, nombreCompleto)
-                .putString(KEY_EMAIL, email)
-                .putString(KEY_NOMBRE_USUARIO, nombreUsuario)
-                .putString(KEY_ROL, rol)
-                .putString(KEY_FOTO_PERFIL_URL, fotoPerfilUrl)
-                .apply();
+        synchronized (LOCK) {
+            tokenEnMemoria = token;
+            prefs.edit()
+                    .putString(KEY_TOKEN_CIFRADO, cifrado)
+                    .putString(KEY_USER_ID, userId)
+                    .putString(KEY_NOMBRE_COMPLETO, nombreCompleto)
+                    .putString(KEY_EMAIL, email)
+                    .putString(KEY_NOMBRE_USUARIO, nombreUsuario)
+                    .putString(KEY_ROL, rol)
+                    .putString(KEY_FOTO_PERFIL_URL, fotoPerfilUrl)
+                    .apply();
+        }
     }
 
     public void actualizarNombreUsuario(String nombreUsuario) {
@@ -61,8 +65,41 @@ public class SessionManager {
     }
 
     public void clearSession() {
-        tokenEnMemoria = null;
-        prefs.edit().clear().apply();
+        synchronized (LOCK) {
+            tokenEnMemoria = null;
+            prefs.edit().clear().apply();
+        }
+    }
+
+    /**
+     * Sesión deslizante: reemplaza el token por el que mandó el backend en X-Renewed-Token, sin avisarle
+     * nada al usuario. Solo si la sesión sigue siendo la que hizo el pedido: si mientras tanto se cerró
+     * sesión (o entró otra cuenta, u otro pedido ya lo renovó) se descarta. Nunca revive una sesión cerrada.
+     *
+     * @return true si se guardó el token nuevo.
+     */
+    public boolean renovarToken(String tokenEnviado, String nuevo) {
+        synchronized (LOCK) {
+            if (!aceptaRenovacion(getToken(), tokenEnviado, nuevo, System.currentTimeMillis())) return false;
+            String cifrado;
+            try {
+                cifrado = TokenCipher.cifrar(nuevo);
+            } catch (Exception e) {
+                cifrado = null; // igual que al loguearse: sin Keystore, solo en memoria
+            }
+            tokenEnMemoria = nuevo;
+            prefs.edit().putString(KEY_TOKEN_CIFRADO, cifrado).apply();
+            return true;
+        }
+    }
+
+    /**
+     * Si el token renovado reemplaza al guardado: la sesión tiene que seguir siendo la que mandó el
+     * pedido ("actual" == "enviado"), y el nuevo tiene que ser un JWT legible y todavía vigente.
+     */
+    static boolean aceptaRenovacion(String actual, String enviado, String nuevo, long ahoraMillis) {
+        if (actual == null || nuevo == null || !actual.equals(enviado) || actual.equals(nuevo)) return false;
+        return !JwtUtils.estaVencido(nuevo, ahoraMillis);
     }
 
     public boolean isLoggedIn() {

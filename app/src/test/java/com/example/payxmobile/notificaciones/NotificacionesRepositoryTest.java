@@ -110,7 +110,7 @@ public class NotificacionesRepositoryTest {
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
         ApiService api = RetrofitClient.crear(server.url("/").toString(), () -> token,
-                System::currentTimeMillis, () -> {}, false);
+                () -> {}, false);
         reloj = new Reloj();
         repo = new NotificacionesRepository(() -> api, reloj);
     }
@@ -396,11 +396,11 @@ public class NotificacionesRepositoryTest {
         esperar("badge", () -> Long.valueOf(2).equals(repo.getEstado().sinLeer));
     }
 
-    // ── D7: 403 y errores de red ─────────────────────────────────────────────
+    // ── D7: 401, 403 y errores de red ─────────────────────────────────────────────
 
     @Test
-    public void d7_403SinBodyCortaElPollingSinBucle() throws Exception {
-        responder(SIN_LEER, new MockResponse().setResponseCode(403));
+    public void d7_401CortaElPollingSinBucle() throws Exception {
+        responder(SIN_LEER, new MockResponse().setResponseCode(401).setBody("{\"error\":\"No autenticado (token ausente, invalido o vencido)\"}"));
         repo.iniciarAutoRefresco();
         esperar("sesión inválida", () -> repo.getEstado().sesionInvalida);
         assertEquals("sin timer: no hay bucle de pedidos", 0, reloj.pendientes());
@@ -415,6 +415,16 @@ public class NotificacionesRepositoryTest {
         repo.limpiar();
         assertFalse(repo.getEstado().sesionInvalida);
         assertNull(repo.getEstado().sinLeer);
+    }
+
+    @Test
+    public void d7_403NoCortaElPollingNiLaSesion() throws Exception {
+        responder(SIN_LEER, new MockResponse().setResponseCode(403).setBody("{\"error\":\"No tenes permiso para hacer esto\"}"));
+        repo.iniciarAutoRefresco();
+        esperar("primer pedido", () -> pedidosA(SIN_LEER) == 1);
+        Thread.sleep(100);
+        assertFalse(repo.getEstado().sesionInvalida);
+        assertEquals("el polling sigue", 1, reloj.pendientes());
     }
 
     @Test
@@ -436,7 +446,7 @@ public class NotificacionesRepositoryTest {
         // Backend caído del todo
         String url = server.url("/").toString();
         server.shutdown();
-        ApiService caido = RetrofitClient.crear(url, () -> "x", System::currentTimeMillis, () -> {}, false);
+        ApiService caido = RetrofitClient.crear(url, () -> "x", () -> {}, false);
         NotificacionesRepository sinBackend = new NotificacionesRepository(() -> caido, reloj);
         sinBackend.abrirPanel();
         esperar("error", () -> sinBackend.getEstado().errorPrimeraCarga != null);

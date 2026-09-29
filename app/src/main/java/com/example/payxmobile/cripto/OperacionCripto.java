@@ -236,7 +236,7 @@ public class OperacionCripto {
 
     private static String mensajeError(Response<?> response) {
         String mensaje = ApiErrores.mensaje(response);
-        // Sin {"error"} (ej. 403 vacío: símbolo o tipo inválidos para el @Valid): genérico de la web
+        // Sin texto útil del backend (400 sin detalle, body vacío): genérico de la web
         boolean generico = mensaje.equals(ApiErrores.MSG_DATOS_INVALIDOS)
                 || mensaje.equals(ApiErrores.MSG_RESPUESTA_INESPERADA);
         return generico ? MSG_NO_SE_PUDO : mensaje;

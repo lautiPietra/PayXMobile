@@ -50,8 +50,8 @@ public class EnvioTransferenciaTest {
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
         String url = server.url("/").toString();
-        api = RetrofitClient.crear(url, () -> token, System::currentTimeMillis, () -> {}, false, true);
-        apiSinReintentos = RetrofitClient.crear(url, () -> token, System::currentTimeMillis, () -> {}, false, false);
+        api = RetrofitClient.crear(url, () -> token, () -> {}, false, true);
+        apiSinReintentos = RetrofitClient.crear(url, () -> token, () -> {}, false, false);
         envio = nuevo(Moneda.PESOS);
     }
 
@@ -190,13 +190,13 @@ public class EnvioTransferenciaTest {
         e.continuar(new BigDecimal("100"));
         esperar("429", () -> !e.isResolviendo() && e.getError() != null);
         assertEquals("Demasiadas solicitudes. Intenta de nuevo en unos minutos", e.getError());
-        // Sin {"error"} (403 vacío por validación): el texto genérico de la web
+        // Sin texto útil (400 de validación sin detalle): el texto genérico de la web
         EnvioTransferencia e2 = nuevo(Moneda.PESOS);
-        server.enqueue(new MockResponse().setResponseCode(403));
+        server.enqueue(new MockResponse().setResponseCode(400).setBody("{\"error\":\"Datos invalidos\",\"campos\":{}}"));
         e2.setDestinatario("x");
         e2.setMonto("10");
         e2.continuar(new BigDecimal("100"));
-        esperar("403", () -> !e2.isResolviendo() && e2.getError() != null);
+        esperar("400", () -> !e2.isResolviendo() && e2.getError() != null);
         assertEquals(EnvioTransferencia.MSG_DESTINATARIO_NO_ENCONTRADO, e2.getError());
     }
 
@@ -302,7 +302,7 @@ public class EnvioTransferenciaTest {
     }
 
     @Test
-    public void t10_5xxY403VacioNoRompenYDejanReintentar() throws Exception {
+    public void t10_5xxY400SinDetalleNoRompenYDejanReintentar() throws Exception {
         hastaConfirmar(envio, "ana", "10", new BigDecimal("100"));
         server.enqueue(new MockResponse().setResponseCode(500));
         envio.confirmar();
@@ -310,9 +310,9 @@ public class EnvioTransferenciaTest {
         assertEquals(ApiErrores.MSG_SERVIDOR, envio.getError());
         assertEquals(EnvioTransferencia.Paso.CONFIRMAR, envio.getPaso());
 
-        server.enqueue(new MockResponse().setResponseCode(403));
+        server.enqueue(new MockResponse().setResponseCode(400).setBody("{\"error\":\"Datos invalidos\",\"campos\":{}}"));
         envio.confirmar(); // un rechazo explícito sí deja reintentar
-        esperar("403", () -> !envio.isEnviando() && server.getRequestCount() == 3);
+        esperar("400", () -> !envio.isEnviando() && server.getRequestCount() == 3);
         assertEquals(EnvioTransferencia.MSG_NO_SE_PUDO, envio.getError());
     }
 
@@ -364,7 +364,7 @@ public class EnvioTransferenciaTest {
         hastaConfirmar(envio, "ana", "10", new BigDecimal("100"));
         String url = server.url("/").toString();
         server.shutdown(); // conexión rechazada: seguro que no salió
-        ApiService caido = RetrofitClient.crear(url, () -> "x", System::currentTimeMillis, () -> {}, false, false);
+        ApiService caido = RetrofitClient.crear(url, () -> "x", () -> {}, false, false);
         EnvioTransferencia e = new EnvioTransferencia(Moneda.PESOS, () -> caido, () -> caido, refrescos::incrementAndGet);
         e.setDestinatario("ana");
         e.setMonto("10");

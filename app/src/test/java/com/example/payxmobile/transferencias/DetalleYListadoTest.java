@@ -58,7 +58,7 @@ public class DetalleYListadoTest {
         server = new MockWebServer();
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
-        api = RetrofitClient.crear(server.url("/").toString(), () -> token, System::currentTimeMillis,
+        api = RetrofitClient.crear(server.url("/").toString(), () -> token,
                 sesionesVencidas::incrementAndGet, false);
     }
 

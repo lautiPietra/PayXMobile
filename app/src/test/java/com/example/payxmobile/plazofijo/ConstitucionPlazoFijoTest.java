@@ -87,7 +87,7 @@ public class ConstitucionPlazoFijoTest {
         });
         server.start();
         String token = JwtFalso.conExp(System.currentTimeMillis() / 1000 + 7200);
-        api = RetrofitClient.crear(server.url("/").toString(), () -> token, System::currentTimeMillis,
+        api = RetrofitClient.crear(server.url("/").toString(), () -> token,
                 () -> {}, false, false);
     }
 
@@ -467,7 +467,7 @@ public class ConstitucionPlazoFijoTest {
         apagado.start();
         String url = apagado.url("/").toString();
         apagado.shutdown();
-        ApiService caido = RetrofitClient.crear(url, () -> "x", System::currentTimeMillis, () -> {}, false, false);
+        ApiService caido = RetrofitClient.crear(url, () -> "x", () -> {}, false, false);
         ConstitucionPlazoFijo c = new ConstitucionPlazoFijo(() -> api, () -> caido, refrescos::incrementAndGet,
                 rechazos::incrementAndGet);
         c.cargarTasas();

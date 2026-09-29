@@ -53,7 +53,7 @@ public class NotificacionesRepository {
         public final boolean marcando;
         /** El último "marcar todas como leídas" falló (la lista NO se vació). */
         public final String errorMarcar;
-        /** 403 en un GET: token inválido o cuenta desactivada. */
+        /** 401 en un GET: token inválido/vencido o cuenta desactivada. */
         public final boolean sesionInvalida;
 
         Estado(Long sinLeer, List<NotificacionResponse> lista, String errorPrimeraCarga, boolean desactualizado,
@@ -269,7 +269,7 @@ public class NotificacionesRepository {
                         } else if (lista == null || lista.size() != cantidad) {
                             precargarLista = true;
                         }
-                    } else if (response.code() == 403) {
+                    } else if (response.code() == 401) {
                         marcarSesionInvalida();
                     }
                     // Otro error: se mantiene el último número conocido
@@ -326,7 +326,7 @@ public class NotificacionesRepository {
                             lista = Collections.unmodifiableList(nuevas);
                             errorPrimeraCarga = null;
                             desactualizado = false;
-                        } else if (response.code() == 403) {
+                        } else if (response.code() == 401) {
                             marcarSesionInvalida();
                         } else {
                             registrarFallo(ApiErrores.mensaje(response));
@@ -386,7 +386,7 @@ public class NotificacionesRepository {
                     cambiosLocales++; // lo pedido mientras tanto ya no sirve
                     if (response.isSuccessful()) {
                         // ya estaba vacío
-                    } else if (response.code() == 403) {
+                    } else if (response.code() == 401) {
                         restaurar(listaAntes, sinLeerAntes);
                         marcarSesionInvalida();
                     } else {
@@ -420,8 +420,8 @@ public class NotificacionesRepository {
         return MSG_NO_SE_PUDO_MARCAR + " " + detalle;
     }
 
-    // Estos endpoints no tienen body validado: un 403 es de autenticación. Se corta el polling
-    // (sin bucle de pedidos) y la pantalla manda al login.
+    // 401 = sin sesión válida: el interceptor ya cierra la sesión; acá se corta el polling
+    // (sin bucle de pedidos). Un 403 (sin permiso) es un error más, no corta nada.
     private void marcarSesionInvalida() {
         sesionInvalida = true;
         cancelarTimer();
