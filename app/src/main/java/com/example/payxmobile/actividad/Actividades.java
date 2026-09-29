@@ -29,7 +29,7 @@ import java.util.Map;
  */
 public final class Actividades {
 
-    public static final int POR_TANDA = 100;
+    public static final int POR_PAGINA = 30;
     public static final int CANTIDAD_INICIO = 4;
     public static final List<Actividad.Tipo> TIPOS_ACTIVIDAD = Collections.unmodifiableList(Arrays.asList(Actividad.Tipo.values()));
 

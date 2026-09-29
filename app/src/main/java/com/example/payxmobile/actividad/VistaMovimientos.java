@@ -7,6 +7,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
@@ -46,10 +47,14 @@ public final class VistaMovimientos {
     public final String resumen;
     /** Texto del cartel "sin resultados", o null si hay resultados (o el rango es inválido). */
     public final String sinResultados;
-    /** Lo que se dibuja: las primeras tandas de 100. */
+    /** Lo que se dibuja: los movimientos de la página actual (de a 30). */
     public final List<Actividad> visibles;
-    /** "Mostrar más (1.900 restantes)" o null si ya se ve todo. */
-    public final String mostrarMas;
+    /** Página que se ve (desde 1), ya ajustada si la lista se achicó. */
+    public final int pagina;
+    /** 0 o 1 = no hace falta paginador. */
+    public final int totalPaginas;
+    /** "31–60 de 150", o null sin paginador. */
+    public final String rangoPagina;
     /** Total sin filtros (para Inicio y el resumen). */
     public final int total;
     /** Contador de cada botón de moneda, dentro del rango de fechas elegido. */
@@ -57,8 +62,8 @@ public final class VistaMovimientos {
 
     private VistaMovimientos(Modo modo, String error, boolean desactualizado, boolean avisoTope,
                              boolean mostrarFiltros, boolean hayFiltro, String errorRango, String resumen,
-                             String sinResultados, List<Actividad> visibles, String mostrarMas, int total,
-                             Map<FiltroMoneda, Integer> contadoresMoneda) {
+                             String sinResultados, List<Actividad> visibles, int pagina, int totalPaginas,
+                             String rangoPagina, int total, Map<FiltroMoneda, Integer> contadoresMoneda) {
         this.modo = modo;
         this.error = error;
         this.desactualizado = desactualizado;
@@ -69,20 +74,22 @@ public final class VistaMovimientos {
         this.resumen = resumen;
         this.sinResultados = sinResultados;
         this.visibles = visibles;
-        this.mostrarMas = mostrarMas;
+        this.pagina = pagina;
+        this.totalPaginas = totalPaginas;
+        this.rangoPagina = rangoPagina;
         this.total = total;
         this.contadoresMoneda = contadoresMoneda;
     }
 
     /** Pantalla "Mis movimientos" sin filtro de moneda. */
     public static VistaMovimientos de(TransferenciasRepository.Estado estado, LocalDate desde, LocalDate hasta,
-                                      int tandas, ZoneId zona) {
-        return de(estado, null, desde, hasta, FiltroMoneda.TODAS, tandas, zona);
+                                      int pagina, ZoneId zona) {
+        return de(estado, null, desde, hasta, FiltroMoneda.TODAS, pagina, zona);
     }
 
     public static VistaMovimientos de(TransferenciasRepository.Estado estado, LocalDate desde, LocalDate hasta,
-                                      FiltroMoneda moneda, int tandas, ZoneId zona) {
-        return de(estado, null, desde, hasta, moneda, tandas, zona);
+                                      FiltroMoneda moneda, int pagina, ZoneId zona) {
+        return de(estado, null, desde, hasta, moneda, pagina, zona);
     }
 
     /**
@@ -91,7 +98,7 @@ public final class VistaMovimientos {
      * la moneda; los contadores de moneda salen del resultado por fecha.
      */
     public static VistaMovimientos de(TransferenciasRepository.Estado estado, List<Actividad> construidas,
-                                      LocalDate desde, LocalDate hasta, FiltroMoneda moneda, int tandas, ZoneId zona) {
+                                      LocalDate desde, LocalDate hasta, FiltroMoneda moneda, int pagina, ZoneId zona) {
         List<Actividad> nada = Collections.emptyList();
         Map<FiltroMoneda, Integer> sinContadores = new EnumMap<>(FiltroMoneda.class);
         FiltroMoneda filtroMoneda = moneda != null ? moneda : FiltroMoneda.TODAS;
@@ -99,14 +106,14 @@ public final class VistaMovimientos {
             boolean error = estado != null && estado.errorPrimeraCarga != null;
             // Nunca "no tenés movimientos" si en realidad no se pudieron cargar
             return new VistaMovimientos(error ? Modo.ERROR : Modo.CARGANDO, error ? estado.errorPrimeraCarga : null,
-                    false, false, false, false, null, null, null, nada, null, 0, sinContadores);
+                    false, false, false, false, null, null, null, nada, 1, 0, null, 0, sinContadores);
         }
         List<TransferenciaResponse> transferencias = estado.lista;
         List<Actividad> todas = construidas != null ? construidas : Actividades.construir(transferencias);
         boolean tope = transferencias.size() >= TransferenciasRepository.TOPE_BACKEND;
         if (todas.isEmpty()) {
             return new VistaMovimientos(Modo.VACIO, null, estado.desactualizado, tope, false, false, null, null,
-                    null, nada, null, 0, sinContadores);
+                    null, nada, 1, 0, null, 0, sinContadores);
         }
 
         boolean hayFiltroFecha = desde != null || hasta != null;
@@ -114,7 +121,7 @@ public final class VistaMovimientos {
         boolean hayFiltro = hayFiltroFecha || hayFiltroMoneda;
         if (Actividades.rangoInvalido(desde, hasta)) {
             return new VistaMovimientos(Modo.LISTA, null, estado.desactualizado, tope, true, true,
-                    MSG_RANGO_INVALIDO, null, null, nada, null, todas.size(), FiltroMoneda.contar(nada));
+                    MSG_RANGO_INVALIDO, null, null, nada, 1, 0, null, todas.size(), FiltroMoneda.contar(nada));
         }
         List<Actividad> enRango = Actividades.filtrarPorFecha(todas, desde, hasta, zona);
         Map<FiltroMoneda, Integer> contadores = FiltroMoneda.contar(enRango);
@@ -131,11 +138,17 @@ public final class VistaMovimientos {
                     : hayFiltroMoneda ? MSG_SIN_RESULTADOS_MONEDA
                     : MSG_SIN_RESULTADOS;
         }
-        int cantidad = Math.min(filtradas.size(), Math.max(1, tandas) * Actividades.POR_TANDA);
-        int restantes = filtradas.size() - cantidad;
-        String mostrarMas = restantes > 0 ? "Mostrar más (" + miles(restantes) + " restantes)" : null;
+        // De a 30 por página. Si un refresco o un filtro dejó menos páginas, se queda en la última.
+        int totalPaginas = (filtradas.size() + Actividades.POR_PAGINA - 1) / Actividades.POR_PAGINA;
+        int actual = Math.max(1, Math.min(pagina, totalPaginas));
+        int desdeIndice = (actual - 1) * Actividades.POR_PAGINA;
+        int hastaIndice = Math.min(filtradas.size(), desdeIndice + Actividades.POR_PAGINA);
+        String rangoPagina = totalPaginas > 1
+                ? miles(desdeIndice + 1) + "–" + miles(hastaIndice) + " de " + miles(filtradas.size())
+                : null;
         return new VistaMovimientos(Modo.LISTA, null, estado.desactualizado, tope, true, hayFiltro, null, resumen,
-                sinResultados, filtradas.subList(0, cantidad), mostrarMas, todas.size(), contadores);
+                sinResultados, filtradas.subList(desdeIndice, hastaIndice), actual, totalPaginas, rangoPagina,
+                todas.size(), contadores);
     }
 
     /** Inicio: las 4 más recientes, sin filtros. */
@@ -150,7 +163,29 @@ public final class VistaMovimientos {
         if (v.modo != Modo.LISTA) return v;
         List<Actividad> cuatro = v.visibles.subList(0, Math.min(Actividades.CANTIDAD_INICIO, v.visibles.size()));
         return new VistaMovimientos(Modo.LISTA, null, v.desactualizado, false, false, false, null, null, null,
-                cuatro, null, v.total, v.contadoresMoneda);
+                cuatro, 1, 0, null, v.total, v.contadoresMoneda);
+    }
+
+    /**
+     * Botones numerados del paginador: siempre la primera, la última y las vecinas de la actual; lo que
+     * falta se resume con null ("…"). Ej: 20 páginas en la 7 -> 1 … 6 7 8 … 20.
+     */
+    public static List<Integer> botonesPagina(int actual, int total) {
+        List<Integer> botones = new ArrayList<>();
+        if (total <= 1) return botones;
+        if (total <= 7) {
+            for (int i = 1; i <= total; i++) botones.add(i);
+            return botones;
+        }
+        // Cerca de una punta se muestran 5 seguidas, así el "…" nunca reemplaza a un solo número
+        int desde = actual <= 4 ? 2 : actual >= total - 3 ? total - 4 : actual - 1;
+        int hasta = actual <= 4 ? 5 : actual >= total - 3 ? total - 1 : actual + 1;
+        botones.add(1);
+        if (desde > 2) botones.add(null);
+        for (int i = desde; i <= hasta; i++) botones.add(i);
+        if (hasta < total - 1) botones.add(null);
+        botones.add(total);
+        return botones;
     }
 
     /** 1900 -> "1.900" (es-AR fijo). */

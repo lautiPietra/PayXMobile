@@ -6,12 +6,14 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Gravity;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.ConcatAdapter;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -68,12 +70,12 @@ import java.util.Objects;
 
 /**
  * "Mis movimientos" (Movimientos.jsx de la web): transferencias, dólares, cripto y plazos fijos con
- * filtro por moneda (pesos / dólares / cripto) o tipo (plazos fijos), por fecha (día LOCAL, extremos incluidos) y paginación local de a 100. Lee del mismo
+ * filtro por moneda (pesos / dólares / cripto) o tipo (plazos fijos), por fecha (día LOCAL, extremos incluidos) y paginación local de a 30. Lee del mismo
  * TransferenciasRepository que Inicio: un solo polling compartido, solo en primer plano.
  */
 public class MovimientosActivity extends AppCompatActivity {
 
-    private static final String K_DESDE = "mov_desde", K_HASTA = "mov_hasta", K_TANDAS = "mov_tandas",
+    private static final String K_DESDE = "mov_desde", K_HASTA = "mov_hasta", K_PAGINA = "mov_pagina",
             K_MONEDA = "mov_moneda", K_DETALLE = "mov_detalle";
     private static final DateTimeFormatter DD_MM_AAAA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -122,6 +124,7 @@ public class MovimientosActivity extends AppCompatActivity {
     private String detalleARestaurar;
 
     private SwipeRefreshLayout swipeRefresh;
+    private RecyclerView recycler;
     private boolean pullEnCurso;
     private final Encabezado encabezado = new Encabezado();
     private final Filas filas = new Filas();
@@ -143,18 +146,18 @@ public class MovimientosActivity extends AppCompatActivity {
         filtros = new ViewModelProvider(this).get(MovimientosViewModel.class);
         if (savedInstanceState != null) {
             // Muerte del proceso: el ViewModel vuelve vacío, se restaura desde el Bundle
-            if (filtros.getDesde() == null && filtros.getHasta() == null && filtros.getTandas() == 1
+            if (filtros.getDesde() == null && filtros.getHasta() == null && filtros.getPagina() == 1
                     && filtros.getMoneda() == FiltroMoneda.TODAS) {
                 String moneda = savedInstanceState.getString(K_MONEDA);
                 filtros.restaurar(fecha(savedInstanceState.getString(K_DESDE)),
                         fecha(savedInstanceState.getString(K_HASTA)),
                         moneda != null ? FiltroMoneda.valueOf(moneda) : FiltroMoneda.TODAS,
-                        savedInstanceState.getInt(K_TANDAS, 1));
+                        savedInstanceState.getInt(K_PAGINA, 1));
             }
             detalleARestaurar = savedInstanceState.getString(K_DETALLE);
         }
 
-        RecyclerView recycler = findViewById(R.id.recyclerMovimientos);
+        recycler = findViewById(R.id.recyclerMovimientos);
         recycler.setLayoutManager(new LinearLayoutManager(this));
         recycler.setItemAnimator(null); // refrescos en silencio: sin animaciones de más
         recycler.setAdapter(new ConcatAdapter(encabezado, filas, pie));
@@ -217,7 +220,7 @@ public class MovimientosActivity extends AppCompatActivity {
         super.onSaveInstanceState(out);
         if (filtros.getDesde() != null) out.putString(K_DESDE, filtros.getDesde().toString());
         if (filtros.getHasta() != null) out.putString(K_HASTA, filtros.getHasta().toString());
-        out.putInt(K_TANDAS, filtros.getTandas());
+        out.putInt(K_PAGINA, filtros.getPagina());
         out.putString(K_MONEDA, filtros.getMoneda().name());
         out.putString(K_DETALLE, detalle.idAbierto());
     }
@@ -241,10 +244,17 @@ public class MovimientosActivity extends AppCompatActivity {
     private void render() {
         ZoneId zona = ZoneId.systemDefault();
         VistaMovimientos v = VistaMovimientos.de(estado, actividades, filtros.getDesde(), filtros.getHasta(),
-                filtros.getMoneda(), filtros.getTandas(), zona);
+                filtros.getMoneda(), filtros.getPagina(), zona);
         encabezado.mostrar(v);
         filas.submitList(v.visibles);
-        pie.mostrar(v.mostrarMas);
+        pie.mostrar(v);
+    }
+
+    private void irAPagina(int pagina) {
+        filtros.irAPagina(pagina);
+        render();
+        // La página nueva se lee desde su primer movimiento (el encabezado con los filtros queda arriba)
+        ((LinearLayoutManager) recycler.getLayoutManager()).scrollToPositionWithOffset(1, 0);
     }
 
     private void cambiarFiltro(Runnable cambio) {
@@ -492,35 +502,78 @@ public class MovimientosActivity extends AppCompatActivity {
         }
     }
 
-    // ── Pie: "Mostrar más (n restantes)" ──────────────────────────────────────
+    // ── Pie: paginador (‹ 1 … 4 5 6 … 20 ›) ──────────────────────────────────
 
     private class Pie extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-        private String texto;
+        private int pagina = 1, total;
+        private String rango;
 
-        void mostrar(String nuevo) {
-            boolean antes = texto != null, ahora = nuevo != null;
-            texto = nuevo;
+        void mostrar(VistaMovimientos v) {
+            boolean antes = total > 1, ahora = v.totalPaginas > 1;
+            boolean cambio = pagina != v.pagina || total != v.totalPaginas || !Objects.equals(rango, v.rangoPagina);
+            pagina = v.pagina;
+            total = v.totalPaginas;
+            rango = v.rangoPagina;
             if (antes && !ahora) notifyItemRemoved(0);
             else if (!antes && ahora) notifyItemInserted(0);
-            else if (ahora) notifyItemChanged(0);
+            else if (ahora && cambio) notifyItemChanged(0);
         }
 
         @Override
         public int getItemCount() {
-            return texto != null ? 1 : 0;
+            return total > 1 ? 1 : 0;
         }
 
         @NonNull
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View boton = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_mostrar_mas, parent, false);
-            boton.setOnClickListener(x -> cambiarFiltro(filtros::mostrarMas));
-            return new RecyclerView.ViewHolder(boton) {};
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_paginacion, parent, false);
+            v.findViewById(R.id.btnPaginaAnterior).setOnClickListener(x -> irAPagina(pagina - 1));
+            v.findViewById(R.id.btnPaginaSiguiente).setOnClickListener(x -> irAPagina(pagina + 1));
+            return new RecyclerView.ViewHolder(v) {};
         }
 
         @Override
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-            ((TextView) holder.itemView).setText(texto);
+            View v = holder.itemView;
+            View anterior = v.findViewById(R.id.btnPaginaAnterior);
+            View siguiente = v.findViewById(R.id.btnPaginaSiguiente);
+            anterior.setEnabled(pagina > 1);
+            anterior.setAlpha(pagina > 1 ? 1f : 0.3f);
+            siguiente.setEnabled(pagina < total);
+            siguiente.setAlpha(pagina < total ? 1f : 0.3f);
+            ((TextView) v.findViewById(R.id.tvRangoPagina)).setText(rango);
+
+            LinearLayout numeros = v.findViewById(R.id.layoutNumerosPagina);
+            numeros.removeAllViews();
+            for (Integer n : VistaMovimientos.botonesPagina(pagina, total)) {
+                TextView boton = new TextView(v.getContext());
+                boton.setGravity(Gravity.CENTER);
+                boton.setMinWidth(dp(34));
+                boton.setMinHeight(dp(36));
+                boton.setPadding(dp(8), 0, dp(8), 0);
+                boton.setTextSize(14);
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                lp.setMargins(dp(1), 0, dp(1), 0);
+                boton.setLayoutParams(lp);
+                if (n == null) {
+                    boton.setText("…");
+                    boton.setTextColor(ContextCompat.getColor(v.getContext(), R.color.text_secondary));
+                } else {
+                    boolean actual = n == pagina;
+                    boton.setText(String.valueOf(n));
+                    boton.setBackgroundResource(R.drawable.bg_chip_naranja);
+                    boton.setSelected(actual);
+                    boton.setTypeface(null, actual ? Typeface.BOLD : Typeface.NORMAL);
+                    boton.setTextColor(ContextCompat.getColor(v.getContext(),
+                            actual ? R.color.white : R.color.text_primary));
+                    boton.setContentDescription("Página " + n);
+                    int destino = n;
+                    if (!actual) boton.setOnClickListener(x -> irAPagina(destino));
+                }
+                numeros.addView(boton);
+            }
         }
     }
 

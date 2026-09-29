@@ -228,7 +228,7 @@ public class ActividadesTest {
         assertTrue(v.visibles.isEmpty());
         assertNull(v.resumen);
         assertNull(v.sinResultados);
-        assertNull(v.mostrarMas);
+        assertNull(v.rangoPagina);
         assertTrue(v.mostrarFiltros);
     }
 
@@ -251,19 +251,34 @@ public class ActividadesTest {
     }
 
     @Test
-    public void m9_paginacionDeA100ConFormatoEsAr() {
+    public void m9_paginasDeA30ConFormatoEsAr() {
         List<TransferenciaResponse> l = muchas(2000, "2026-09-24T12:00:00Z");
         VistaMovimientos v1 = VistaMovimientos.de(estado(l, null), null, null, 1, BA);
-        assertEquals(100, v1.visibles.size());
-        assertEquals("Mostrar más (1.900 restantes)", v1.mostrarMas);
+        assertEquals(30, v1.visibles.size());
+        assertEquals(67, v1.totalPaginas);
+        assertEquals("1–30 de 2.000", v1.rangoPagina);
         VistaMovimientos v2 = VistaMovimientos.de(estado(l, null), null, null, 2, BA);
-        assertEquals(200, v2.visibles.size());
-        assertEquals("Mostrar más (1.800 restantes)", v2.mostrarMas);
-        VistaMovimientos todo = VistaMovimientos.de(estado(l, null), null, null, 20, BA);
-        assertEquals(2000, todo.visibles.size());
-        assertNull(todo.mostrarMas);
-        assertEquals("Mostrar más (50 restantes)",
-                VistaMovimientos.de(estado(muchas(150, "2026-09-24T12:00:00Z"), null), null, null, 1, BA).mostrarMas);
+        assertEquals(30, v2.visibles.size());
+        assertFalse("la 2 no repite la 1", v1.visibles.contains(v2.visibles.get(0)));
+        assertEquals("31–60 de 2.000", v2.rangoPagina);
+        VistaMovimientos ultima = VistaMovimientos.de(estado(l, null), null, null, 67, BA);
+        assertEquals(20, ultima.visibles.size());
+        assertEquals("1.981–2.000 de 2.000", ultima.rangoPagina);
+        // Pedir una página que ya no existe (la lista se achicó) muestra la última
+        assertEquals(67, VistaMovimientos.de(estado(l, null), null, null, 99, BA).pagina);
+        // Hasta 30 no hay paginador
+        VistaMovimientos una = VistaMovimientos.de(estado(muchas(30, "2026-09-24T12:00:00Z"), null), null, null, 1, BA);
+        assertEquals(1, una.totalPaginas);
+        assertNull(una.rangoPagina);
+    }
+
+    @Test
+    public void m9b_botonesDelPaginador() {
+        assertTrue(VistaMovimientos.botonesPagina(1, 1).isEmpty());
+        assertEquals(java.util.Arrays.asList(1, 2, 3), VistaMovimientos.botonesPagina(2, 3));
+        assertEquals(java.util.Arrays.asList(1, 2, 3, 4, 5, null, 20), VistaMovimientos.botonesPagina(1, 20));
+        assertEquals(java.util.Arrays.asList(1, null, 6, 7, 8, null, 20), VistaMovimientos.botonesPagina(7, 20));
+        assertEquals(java.util.Arrays.asList(1, null, 16, 17, 18, 19, 20), VistaMovimientos.botonesPagina(20, 20));
     }
 
     // ── M11 ───────────────────────────────────────────────────────────────────

@@ -109,13 +109,12 @@ public class FiltroMonedaTest {
     }
 
     @Test
-    public void cambiarLaMonedaVuelveALaPrimeraTandaYLimpiarLaResetea() {
+    public void cambiarLaMonedaVuelveALaPrimeraPaginaYLimpiarLaResetea() {
         MovimientosViewModel vm = new MovimientosViewModel();
-        vm.mostrarMas();
-        vm.mostrarMas();
-        assertEquals(3, vm.getTandas());
+        vm.irAPagina(3);
+        assertEquals(3, vm.getPagina());
         vm.setMoneda(FiltroMoneda.CRIPTO);
-        assertEquals(1, vm.getTandas());
+        assertEquals(1, vm.getPagina());
         assertEquals(FiltroMoneda.CRIPTO, vm.getMoneda());
         vm.setRango(LocalDate.parse("2026-09-01"), LocalDate.parse("2026-09-24"));
         vm.limpiar();
