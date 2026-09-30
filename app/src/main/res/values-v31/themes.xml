@@ -1,0 +1,7 @@
+<resources>
+    <!-- Splash del sistema (Android 12+): fondo negro con el ícono de PayX -->
+    <style name="Theme.PayXMobile" parent="Base.Theme.PayXMobile">
+        <item name="android:windowSplashScreenBackground">@color/payx_background</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/payx_background</item>
+    </style>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Marca que la pantalla ya tiene el margen de las barras del sistema (AjusteBarrasSistema) -->
+    <item name="ajusteBarrasSistema" type="id" />
+</resources>
