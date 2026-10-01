@@ -97,7 +97,15 @@ public class EnvioTransferencia {
         String t = texto != null ? texto : "";
         if (!MontoInput.esTipeoValido(t, moneda)) return false;
         montoTexto = t;
+        if (ValidadorMonto.msgDecimales(moneda.decimales).equals(error)) error = null; // ya tipeó otra cosa
         return true;
+    }
+
+    /** El filtro de tipeo frenó un decimal de más: se avisa en el formulario hasta que siga tipeando. */
+    public void avisarDecimales() {
+        if (paso != Paso.FORMULARIO) return;
+        error = ValidadorMonto.msgDecimales(moneda.decimales);
+        notificar();
     }
 
     public void setMotivo(String motivo) {
@@ -126,8 +134,11 @@ public class EnvioTransferencia {
         if (monto != null) {
             String normalizado = monto.trim().replace('.', ',');
             if (!setMonto(normalizado)) {
-                // Más decimales de los permitidos: se descarta en vez de redondear sin avisar
-                error = ValidadorTransferencia.MONTO_INVALIDO;
+                // Los ceros de más no cuentan ("10,500" queda "10,50"). Con más decimales de los permitidos
+                // se descarta y se avisa, en vez de redondear sin avisar.
+                String errorMonto = ValidadorMonto.validar(normalizado, moneda.decimales);
+                if (errorMonto == null) setMonto(MontoInput.aTexto(MontoInput.parsear(normalizado), moneda));
+                else error = errorMonto;
             }
         }
         if (motivo != null) setMotivo(motivo);

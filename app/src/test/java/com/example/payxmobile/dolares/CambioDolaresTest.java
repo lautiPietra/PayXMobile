@@ -104,8 +104,9 @@ public class CambioDolaresTest {
         assertEquals("COMPRA paga el precio de VENTA", new BigDecimal("1435.00"), CambioDolares.precioPara(CambioDolares.Tipo.COMPRA, c));
         assertEquals("VENTA recibe el precio de COMPRA", new BigDecimal("1385.00"), CambioDolares.precioPara(CambioDolares.Tipo.VENTA, c));
 
-        // Preview con el precio correcto (si estuvieran cruzados daría 7,22 y 14.350,00)
-        assertEquals(new BigDecimal("6.97"), CambioDolares.preview(CambioDolares.Tipo.COMPRA, new BigDecimal("10000"),
+        // Preview con el precio correcto (si estuvieran cruzados daría 7,22 y 14.350,00).
+        // 10.000 / 1.435 = 6,9686... -> 6,96 (DOWN, como el backend)
+        assertEquals(new BigDecimal("6.96"), CambioDolares.preview(CambioDolares.Tipo.COMPRA, new BigDecimal("10000"),
                 CambioDolares.precioPara(CambioDolares.Tipo.COMPRA, c)));
         assertEquals(new BigDecimal("13850.00"), CambioDolares.preview(CambioDolares.Tipo.VENTA, new BigDecimal("10"),
                 CambioDolares.precioPara(CambioDolares.Tipo.VENTA, c)));
@@ -114,10 +115,11 @@ public class CambioDolaresTest {
     @Test
     public void d8_previewRedondeaComoElBackend() {
         BigDecimal venta = new BigDecimal("1435.00");
-        // 1000 / 1435 = 0,696864... -> 0,70 (HALF_UP a 2 decimales)
-        assertEquals(new BigDecimal("0.70"), CambioDolares.preview(CambioDolares.Tipo.COMPRA, new BigDecimal("1000"), venta));
-        // 0,015 × 1385 = 20,775 -> 20,78
-        assertEquals(new BigDecimal("20.78"), CambioDolares.preview(CambioDolares.Tipo.VENTA, new BigDecimal("0.015"), new BigDecimal("1385")));
+        // Lo que recibe el usuario, SIEMPRE hacia abajo (DOWN a 2 decimales): con HALF_UP comprar y vender
+        // centavos daba ganancia gratis. 1000 / 1435 = 0,696864... -> 0,69 (HALF_UP daba 0,70)
+        assertEquals(new BigDecimal("0.69"), CambioDolares.preview(CambioDolares.Tipo.COMPRA, new BigDecimal("1000"), venta));
+        // 0,015 × 1385 = 20,775 -> 20,77 (HALF_UP daba 20,78)
+        assertEquals(new BigDecimal("20.77"), CambioDolares.preview(CambioDolares.Tipo.VENTA, new BigDecimal("0.015"), new BigDecimal("1385")));
         // Sin monto o sin precio: no hay preview (nunca un 0 inventado)
         assertNull(CambioDolares.preview(CambioDolares.Tipo.COMPRA, null, venta));
         assertNull(CambioDolares.preview(CambioDolares.Tipo.COMPRA, BigDecimal.ZERO, venta));
@@ -208,13 +210,26 @@ public class CambioDolaresTest {
         assertEquals(CambioDolares.MSG_MONTO_INVALIDO, CambioDolares.validar(C, "12345678901234", new BigDecimal("1E20"), precio));
         assertEquals(CambioDolares.MSG_INSUFICIENTE_COMPRA, CambioDolares.validar(C, "100000,01", SALDO_PESOS, precio));
         assertEquals(CambioDolares.MSG_INSUFICIENTE_VENTA, CambioDolares.validar(V, "50,01", SALDO_USD, precio));
-        assertEquals(CambioDolares.MSG_SIN_SALDO, CambioDolares.validar(C, "10", null, precio));
+        assertEquals(CambioDolares.MSG_SIN_SALDO, CambioDolares.validar(C, "10000", null, precio));
         assertEquals(CambioDolares.MSG_SIN_COTIZACION, CambioDolares.validar(C, "10", SALDO_PESOS, null));
         // Válidos: justo el saldo, ceros de más a la derecha, punto o coma
         assertNull(CambioDolares.validar(C, "100000,00", SALDO_PESOS, precio));
         assertNull(CambioDolares.validar(V, "50", SALDO_USD, precio));
         assertNull(CambioDolares.validar(V, "0.01", SALDO_USD, precio));
-        assertNull(CambioDolares.validar(C, "10,500", SALDO_PESOS, precio));
+        assertNull(CambioDolares.validar(C, "10000,500", SALDO_PESOS, precio));
+    }
+
+    @Test
+    public void d9_montoQueNoRecibeNiUnCentavo_noSeManda() {
+        // 7,65 / 1.530 = 0,005 -> 0,00 con DOWN: el backend lo rechazaría, la app ni lo manda
+        assertEquals("El monto es muy bajo: no alcanza para comprar ni un centavo de dólar.",
+                CambioDolares.validar(CambioDolares.Tipo.COMPRA, "7,65", SALDO_PESOS, new BigDecimal("1530")));
+        // 15,30 / 1.530 = 0,01: ya alcanza
+        assertNull(CambioDolares.validar(CambioDolares.Tipo.COMPRA, "15,30", SALDO_PESOS, new BigDecimal("1530")));
+        // Venta: 0,01 × 0,50 = 0,005 -> 0,00 (solo con una cotización absurda, pero la regla es la misma)
+        assertEquals("El monto es muy bajo para esta cotización.",
+                CambioDolares.validar(CambioDolares.Tipo.VENTA, "0,01", SALDO_USD, new BigDecimal("0.50")));
+        assertNull(CambioDolares.validar(CambioDolares.Tipo.VENTA, "0,01", SALDO_USD, new BigDecimal("1495")));
     }
 
     @Test
@@ -236,7 +251,10 @@ public class CambioDolaresTest {
         c.setMonto("200000");
         c.continuar(SALDO_PESOS);
         assertEquals(CambioDolares.MSG_INSUFICIENTE_COMPRA, c.getError());
-        c.setMonto("10");
+        c.setMonto("7");
+        c.continuar(SALDO_PESOS);
+        assertEquals("$ 7 no alcanza para un centavo", CambioDolares.MSG_MUY_BAJO_COMPRA, c.getError());
+        c.setMonto("10000");
         c.continuar(null);
         assertEquals(CambioDolares.MSG_SIN_SALDO, c.getError());
         Thread.sleep(150);
@@ -372,7 +390,10 @@ public class CambioDolaresTest {
                 {"COMPRA", "La cotizacion del dolar esta desactualizada, no se puede operar en este momento. Intenta de nuevo en unos segundos"},
         };
         for (String[] caso : casos) {
-            CambioDolares c = listo(CambioDolares.Tipo.valueOf(caso[0]), "0,01");
+            // Montos que pasan la validación local (en la compra, $ 0,01 ya no se manda: no alcanza para
+            // un centavo). El "muy bajo" del backend sigue pudiendo llegar si la cotización cambió en el medio.
+            CambioDolares.Tipo tipo = CambioDolares.Tipo.valueOf(caso[0]);
+            CambioDolares c = listo(tipo, tipo == CambioDolares.Tipo.COMPRA ? "100" : "0,01");
             server.enqueue(new MockResponse().setResponseCode(400).setBody("{\"error\":\"" + caso[1] + "\"}"));
             c.continuar(new BigDecimal("1000"));
             c.confirmar();

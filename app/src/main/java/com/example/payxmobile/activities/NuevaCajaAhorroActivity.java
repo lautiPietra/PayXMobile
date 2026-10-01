@@ -3,7 +3,6 @@ package com.example.payxmobile.activities;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
@@ -30,7 +29,7 @@ import com.example.payxmobile.cajas.ui.EstiloCaja;
 import com.example.payxmobile.model.CajaAhorroResponse;
 import com.example.payxmobile.network.RetrofitClient;
 import com.example.payxmobile.transferencias.Moneda;
-import com.example.payxmobile.transferencias.MontoInput;
+import com.example.payxmobile.transferencias.ui.FiltroMonto;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -205,12 +204,8 @@ public class NuevaCajaAhorroActivity extends AppCompatActivity {
                 render();
             }
         });
-        // Bloquea el tipeo de más de 2 decimales o más de 13 enteros
-        etMeta.setFilters(new InputFilter[]{(fuente, inicio, fin, destino, dInicio, dFin) -> {
-            String resultado = destino.subSequence(0, dInicio) + fuente.subSequence(inicio, fin).toString()
-                    + destino.subSequence(dFin, destino.length());
-            return MontoInput.esTipeoValido(resultado, Moneda.PESOS) ? null : "";
-        }});
+        // Bloquea el tipeo de más de 2 decimales o más de 13 enteros, y avisa
+        FiltroMonto.instalar(etMeta, () -> Moneda.PESOS, formulario::avisarDecimales);
         etMeta.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
             @Override public void onTextChanged(CharSequence s, int a, int b, int c) {}

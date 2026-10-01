@@ -9,6 +9,7 @@ import com.example.payxmobile.network.ApiService;
 import com.example.payxmobile.transferencias.FalloEnvio;
 import com.example.payxmobile.transferencias.Moneda;
 import com.example.payxmobile.transferencias.MontoInput;
+import com.example.payxmobile.transferencias.ValidadorMonto;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -36,7 +37,7 @@ public class OperacionCripto {
 
     public enum Paso { FORMULARIO, CONFIRMAR, EXITO, INCIERTO }
 
-    public static final String MSG_MONTO_INVALIDO = "Ingresá un monto válido.";
+    public static final String MSG_MONTO_INVALIDO = ValidadorMonto.MSG_MONTO_INVALIDO;
     public static final String MSG_SIN_COTIZACION = "Todavía no tenemos la cotización disponible.";
     public static final String MSG_SIN_SALDO = "Todavía no pudimos cargar tu saldo. Probá de nuevo en unos segundos.";
     public static final String MSG_INSUFICIENTE_COMPRA = "No tenés saldo en pesos suficiente para esta compra.";
@@ -45,7 +46,7 @@ public class OperacionCripto {
             "No pudimos confirmar si la operación se realizó. Revisá tus saldos antes de intentar de nuevo";
 
     public static String msgDecimales(int decimales) {
-        return "El monto puede tener como máximo " + decimales + " decimales.";
+        return ValidadorMonto.msgDecimales(decimales);
     }
 
     public static String msgInsuficienteVenta(Moneda cripto) {
@@ -118,15 +119,15 @@ public class OperacionCripto {
                 : monto.multiply(precio).setScale(2, RoundingMode.DOWN);
     }
 
-    /** Validación local ANTES de mandar nada (null = OK). "Monto muy bajo" lo decide el backend. */
+    /**
+     * Validación local ANTES de mandar nada (null = OK): hasta 2 decimales al COMPRAR (el monto son pesos)
+     * y hasta 8 al VENDER (es cripto). "Monto muy bajo" lo decide el backend.
+     */
     public static String validar(Tipo tipo, Moneda cripto, String montoTexto, BigDecimal saldo, BigDecimal precio) {
         if (precio == null) return MSG_SIN_COTIZACION;
+        String errorMonto = ValidadorMonto.validar(montoTexto, monedaEntrada(tipo, cripto).decimales);
+        if (errorMonto != null) return errorMonto;
         BigDecimal monto = MontoInput.parsear(montoTexto);
-        if (monto == null || monto.signum() <= 0) return MSG_MONTO_INVALIDO;
-        Moneda entrada = monedaEntrada(tipo, cripto);
-        BigDecimal limpio = monto.stripTrailingZeros();
-        if (limpio.scale() > entrada.decimales) return msgDecimales(entrada.decimales);
-        if (limpio.precision() - limpio.scale() > Moneda.MAX_ENTEROS) return MSG_MONTO_INVALIDO;
         if (saldo == null) return MSG_SIN_SALDO;
         if (monto.compareTo(saldo) > 0) {
             return tipo == Tipo.COMPRA ? MSG_INSUFICIENTE_COMPRA : msgInsuficienteVenta(cripto);
@@ -152,6 +153,13 @@ public class OperacionCripto {
         montoTexto = t;
         if (paso == Paso.FORMULARIO) error = null;
         return true;
+    }
+
+    /** El filtro de tipeo frenó un decimal de más: se avisa en el formulario hasta que siga tipeando. */
+    public void avisarDecimales() {
+        if (paso != Paso.FORMULARIO) return;
+        error = msgDecimales(getMonedaEntrada().decimales);
+        notificar();
     }
 
     /** "Usar todo": el saldo EXACTO (8 decimales en cripto, sin redondear ni rellenar). */

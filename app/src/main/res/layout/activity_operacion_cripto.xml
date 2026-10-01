@@ -556,6 +556,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
+                android:digits="0123456789,."
                 android:hint="0,00"
                 android:inputType="numberDecimal"
                 android:paddingVertical="14dp"

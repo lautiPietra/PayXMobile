@@ -18,11 +18,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        // URL del backend en un solo lugar. Por defecto, el emulador (10.0.2.2 = localhost de la PC).
-        // Teléfono físico: definí payxApiBaseUrl en gradle.properties o pasá -PpayxApiBaseUrl=...
-        val apiBaseUrl = (project.findProperty("payxApiBaseUrl") as String?) ?: "http://10.0.2.2:8080/"
-        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
     buildFeatures {
@@ -33,8 +28,24 @@ android {
         unitTests.isReturnDefaultValues = true
     }
 
+    // URL del backend (BuildConfig.API_BASE_URL), una por tipo de build. El código no tiene ninguna escrita.
     buildTypes {
+        debug {
+            // Backend local por http: el emulador ve la PC en 10.0.2.2. Teléfono físico: definí payxApiBaseUrl
+            // en gradle.properties (o pasá -PpayxApiBaseUrl=...) con la IP de la PC en la misma Wi-Fi.
+            val urlDebug = (project.findProperty("payxApiBaseUrl") as String?) ?: "http://10.0.2.2:8080/"
+            buildConfigField("String", "API_BASE_URL", "\"$urlDebug\"")
+        }
         release {
+            // URL pública del backend, SIEMPRE https (el release no permite http: network_security_config).
+            // TODO: todavía no hay dominio. Reemplazá el placeholder o pasá -PpayxApiBaseUrlRelease=https://...
+            // El dominio ".invalid" no existe: un release armado sin cambiarlo no le pega a ningún servidor.
+            val urlRelease = (project.findProperty("payxApiBaseUrlRelease") as String?)
+                ?: "https://cambiar-por-el-dominio-del-backend.invalid/"
+            require(urlRelease.startsWith("https://") && urlRelease.endsWith("/")) {
+                "La URL del backend para release tiene que ser https y terminar en /: $urlRelease"
+            }
+            buildConfigField("String", "API_BASE_URL", "\"$urlRelease\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

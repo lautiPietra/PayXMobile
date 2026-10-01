@@ -4,18 +4,22 @@ import java.util.regex.Pattern;
 
 /**
  * Mismas reglas que los @Valid del backend (y que la web). Si algo no las cumple el backend
- * responde 403 con body vacío, así que se valida acá ANTES de mandar la request.
+ * responde 400 con el detalle en "campos", pero se valida acá ANTES de mandar la request.
  * Cada método devuelve el mensaje de error, o null si el valor es válido.
  */
 public final class Validadores {
 
     private Validadores() {}
 
+    public static final String MSG_NOMBRE_USUARIO_CARACTERES = "Solo letras, números, puntos, guiones y guiones bajos";
+
     // Mismo patrón que usa la web (Login.jsx / Registro.jsx)
     private static final Pattern EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     private static final Pattern TELEFONO = Pattern.compile("^[0-9+\\-\\s()]{8,20}$");
     private static final Pattern DNI = Pattern.compile("^[0-9]{7,10}$");
     private static final Pattern ALIAS = Pattern.compile("^[a-zA-Z0-9._-]{6,30}$");
+    // Sin espacios ni "@": se usa como "@usuario" para transferir (RegistroRequest / ActualizarPerfilRequest)
+    private static final Pattern NOMBRE_USUARIO = Pattern.compile("^[a-zA-Z0-9._-]+$");
     private static final Pattern CODIGO = Pattern.compile("^[0-9]{6}$");
 
     public static String email(String email) {
@@ -49,9 +53,14 @@ public final class Validadores {
         return null;
     }
 
+    /**
+     * 3 a 20 caracteres: letras sin acentos, números, ".", "-" y "_". Que esté libre lo decide el backend,
+     * sin distinguir mayúsculas ("Juan" choca con "juan"): responde "El nombre de usuario ya esta en uso".
+     */
     public static String nombreUsuario(String usuario) {
         if (usuario == null || usuario.trim().isEmpty()) return "El nombre de usuario es obligatorio";
         if (usuario.length() < 3 || usuario.length() > 20) return "El nombre de usuario debe tener entre 3 y 20 caracteres";
+        if (!NOMBRE_USUARIO.matcher(usuario).matches()) return MSG_NOMBRE_USUARIO_CARACTERES;
         return null;
     }
 

@@ -6,6 +6,7 @@ import com.example.payxmobile.network.ApiService;
 import com.example.payxmobile.network.EnvioSinReintento;
 import com.example.payxmobile.transferencias.Moneda;
 import com.example.payxmobile.transferencias.MontoInput;
+import com.example.payxmobile.transferencias.ValidadorMonto;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -27,8 +28,8 @@ public class OperacionMontoCaja {
 
     public enum Paso { FORMULARIO, EXITO, INCIERTO }
 
-    public static final String MSG_MONTO_INVALIDO = "Ingresá un monto válido.";
-    public static final String MSG_DECIMALES = "El monto puede tener como máximo 2 decimales.";
+    public static final String MSG_MONTO_INVALIDO = ValidadorMonto.MSG_MONTO_INVALIDO;
+    public static final String MSG_DECIMALES = ValidadorMonto.msgDecimales(2);
     public static final String MSG_SIN_SALDO = "Todavía no pudimos cargar tu saldo. Probá de nuevo en unos segundos.";
     public static final String MSG_INSUFICIENTE_DEPOSITO = "No tenés saldo suficiente en tu cuenta.";
     public static final String MSG_INSUFICIENTE_RETIRO = "La caja no tiene suficiente saldo.";
@@ -86,11 +87,9 @@ public class OperacionMontoCaja {
 
     /** null = OK. disponible: saldo principal (depósito) o de la caja (retiro); null = no cargado. */
     public static String validar(MovimientoCaja.Tipo tipo, String montoTexto, BigDecimal disponible) {
+        String errorMonto = ValidadorMonto.validar(montoTexto, Moneda.PESOS.decimales);
+        if (errorMonto != null) return errorMonto;
         BigDecimal monto = MontoInput.parsear(montoTexto);
-        if (monto == null || monto.signum() <= 0) return MSG_MONTO_INVALIDO;
-        BigDecimal limpio = monto.stripTrailingZeros();
-        if (limpio.scale() > 2) return MSG_DECIMALES;
-        if (limpio.precision() - limpio.scale() > Moneda.MAX_ENTEROS) return MSG_MONTO_INVALIDO;
         if (disponible == null) return MSG_SIN_SALDO;
         if (monto.compareTo(disponible) > 0) {
             return tipo == MovimientoCaja.Tipo.DEPOSITO ? MSG_INSUFICIENTE_DEPOSITO : MSG_INSUFICIENTE_RETIRO;
@@ -114,6 +113,13 @@ public class OperacionMontoCaja {
         montoTexto = t;
         if (paso == Paso.FORMULARIO) error = null;
         return true;
+    }
+
+    /** El filtro de tipeo frenó un decimal de más: se avisa en el formulario hasta que siga tipeando. */
+    public void avisarDecimales() {
+        if (paso != Paso.FORMULARIO || enviando) return;
+        error = MSG_DECIMALES;
+        notificar();
     }
 
     /** "Usar todo": el disponible exacto. */

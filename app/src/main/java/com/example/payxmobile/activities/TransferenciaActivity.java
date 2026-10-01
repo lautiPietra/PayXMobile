@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,9 +32,9 @@ import com.example.payxmobile.transferencias.EnvioTransferencia;
 import com.example.payxmobile.transferencias.EnvioViewModel;
 import com.example.payxmobile.transferencias.FormatoTransferencia;
 import com.example.payxmobile.transferencias.Moneda;
-import com.example.payxmobile.transferencias.MontoInput;
 import com.example.payxmobile.transferencias.Refrescos;
 import com.example.payxmobile.transferencias.TransferenciasRepository;
+import com.example.payxmobile.transferencias.ui.FiltroMonto;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -259,12 +258,8 @@ public class TransferenciaActivity extends AppCompatActivity {
         }));
         etDestinatario.setOnFocusChangeListener((v, foco) -> renderSugerencias());
 
-        // Bloquea el tipeo de más decimales (2 en pesos/dólares, 8 en cripto) o más de 13 enteros
-        etMonto.setFilters(new InputFilter[]{(fuente, inicio, fin, destino, dInicio, dFin) -> {
-            String resultado = destino.subSequence(0, dInicio) + fuente.subSequence(inicio, fin).toString()
-                    + destino.subSequence(dFin, destino.length());
-            return MontoInput.esTipeoValido(resultado, envio.getMoneda()) ? null : "";
-        }});
+        // Bloquea el tipeo de más decimales (2 en pesos/dólares, 8 en cripto) o más de 13 enteros, y avisa
+        FiltroMonto.instalar(etMonto, envio::getMoneda, envio::avisarDecimales);
         etMonto.addTextChangedListener(new Observar(s -> {
             envio.setMonto(s);
             render();

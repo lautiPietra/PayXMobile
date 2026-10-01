@@ -42,11 +42,8 @@ public class OlvidePasswordActivity extends AppCompatActivity {
     private void solicitarReset() {
         String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
 
-        String errorEmail = Validadores.email(email);
-        if (errorEmail != null) {
-            CamposUi.error(etEmail, errorEmail);
-            return;
-        }
+        // Con un email válido también borra el error anterior (ej. el del backend del intento previo)
+        if (CamposUi.error(etEmail, Validadores.email(email))) return;
         if (enCurso) return;
 
         setLoading(true);
@@ -63,8 +60,9 @@ public class OlvidePasswordActivity extends AppCompatActivity {
                             intent.putExtra("email", email);
                             startActivity(intent);
                         } else {
-                            Toast.makeText(OlvidePasswordActivity.this,
-                                    ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
+                            // Ej. "No pudimos enviarte el email de recuperacion. Intenta de nuevo en unos minutos":
+                            // debajo del email se lee entero
+                            CamposUi.error(etEmail, ApiErrores.mensaje(response));
                         }
                     }
 

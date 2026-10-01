@@ -7,6 +7,7 @@ import android.os.Looper;
 import com.example.payxmobile.BuildConfig;
 import com.example.payxmobile.utils.SesionUtils;
 import com.example.payxmobile.utils.SessionManager;
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.math.BigDecimal;
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import okhttp3.ConnectionPool;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -89,7 +91,11 @@ public class RetrofitClient {
         return crear(BuildConfig.API_BASE_URL, sesion, BuildConfig.DEBUG, reintentar, POOL_APP, segundosLectura);
     }
 
-    /** Header con el token nuevo cuando al que se mandó le quedaban menos de 30 min (sesión deslizante). */
+    /**
+     * Header con un token nuevo: cuando al que se mandó le quedaban menos de 30 min (sesión deslizante) y
+     * en la respuesta a PUT /api/perfil/password (cambiar la contraseña invalida todos los tokens anteriores,
+     * incluido el de esta sesión). Se guarda en cualquier respuesta que no sea 401, sea cual sea la pantalla.
+     */
     public static final String HEADER_TOKEN_RENOVADO = "X-Renewed-Token";
 
     /** Lo que el cliente HTTP necesita de la sesión. En la app: SessionManager + SesionUtils. */
@@ -98,8 +104,9 @@ public class RetrofitClient {
         String token();
 
         /**
-         * 401 a un pedido autenticado: sin token válido (ausente, inválido, vencido o cuenta
-         * desactivada). Hay que cerrar la sesión, salvo que ya no sea la que mandó el pedido.
+         * 401 a un pedido autenticado: sin token válido (ausente, inválido, vencido, cuenta desactivada o
+         * emitido antes del último cambio/reset de contraseña, claim "pv"). Hay que cerrar la sesión, salvo
+         * que ya no sea la que mandó el pedido.
          */
         void noAutenticado(String tokenEnviado);
 
@@ -146,16 +153,23 @@ public class RetrofitClient {
                                    ConnectionPool pool, int segundosLectura) {
         return new Retrofit.Builder()
                 .baseUrl(baseUrl)
-                .client(crearCliente(sesion, debug, reintentar, pool, segundosLectura))
-                .addConverterFactory(GsonConverterFactory.create(new GsonBuilder()
-                        .registerTypeAdapter(BigDecimal.class, new BigDecimalPlano())
-                        .create()))
+                .client(crearCliente(HttpUrl.get(baseUrl), sesion, debug, reintentar, pool, segundosLectura))
+                .addConverterFactory(GsonConverterFactory.create(gson()))
                 .build()
                 .create(ApiService.class);
     }
 
-    /** El cliente HTTP con el interceptor de sesión (Authorization, 401, X-Renewed-Token). */
-    public static OkHttpClient crearCliente(SesionHttp sesion, boolean debug, boolean reintentar,
+    /** Cómo viaja el JSON: los BigDecimal siempre planos ("10.2", "0.00000001"), nunca vía double. */
+    public static Gson gson() {
+        return new GsonBuilder().registerTypeAdapter(BigDecimal.class, new BigDecimalPlano()).create();
+    }
+
+    /**
+     * El cliente HTTP con el interceptor de sesión (Authorization, 401, X-Renewed-Token).
+     *
+     * @param base URL base del backend de PayX: el token se manda SOLO a pedidos que van ahí.
+     */
+    public static OkHttpClient crearCliente(HttpUrl base, SesionHttp sesion, boolean debug, boolean reintentar,
                                             ConnectionPool pool, int segundosLectura) {
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .retryOnConnectionFailure(reintentar)
@@ -164,11 +178,13 @@ public class RetrofitClient {
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .addInterceptor(chain -> {
                     Request original = chain.request();
-                    String token = sesion.token();
-                    // /api/auth/** es público: ahí un 401 es "email o contraseña incorrectos", no sesión
-                    if (token == null || original.url().encodedPath().startsWith("/api/auth/")) {
+                    // El token viaja solo al backend de PayX, nunca a otro dominio. Y no a /api/auth/**, que es
+                    // público: ahí un 401 es un login fallido ("Credenciales invalidas"), no una sesión vencida.
+                    if (!esDelBackend(base, original.url()) || esPublica(base, original.url())) {
                         return chain.proceed(original);
                     }
+                    String token = sesion.token();
+                    if (token == null) return chain.proceed(original);
                     Response response = chain.proceed(original.newBuilder()
                             .header("Authorization", "Bearer " + token)
                             .build());
@@ -199,5 +215,16 @@ public class RetrofitClient {
         }
 
         return builder.build();
+    }
+
+    /** Mismo esquema, host y puerto que la URL base, y dentro de su ruta. */
+    static boolean esDelBackend(HttpUrl base, HttpUrl url) {
+        return url.scheme().equals(base.scheme()) && url.host().equals(base.host()) && url.port() == base.port()
+                && url.encodedPath().startsWith(base.encodedPath());
+    }
+
+    /** /api/auth/** (login, Google, registro, códigos): lo único que el backend atiende sin token. */
+    static boolean esPublica(HttpUrl base, HttpUrl url) {
+        return url.encodedPath().startsWith(base.encodedPath() + "api/auth/");
     }
 }

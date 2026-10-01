@@ -3,6 +3,7 @@ package com.example.payxmobile.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,9 +15,14 @@ import com.example.payxmobile.model.ReenviarCodigoRequest;
 import com.example.payxmobile.model.ResetPasswordRequest;
 import com.example.payxmobile.network.ApiErrores;
 import com.example.payxmobile.network.RetrofitClient;
+import com.example.payxmobile.utils.CamposUi;
 import com.example.payxmobile.utils.EsperaReenvio;
+import com.example.payxmobile.utils.SesionUtils;
 import com.example.payxmobile.utils.Validadores;
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -42,6 +48,7 @@ public class ResetPasswordActivity extends AppCompatActivity {
         }
 
         etCodigo = findViewById(R.id.etCodigo);
+        CamposUi.codigoEspaciado(etCodigo, 20);
         etNuevaPassword = findViewById(R.id.etNuevaPassword);
         etConfirmarPassword = findViewById(R.id.etConfirmarPassword);
         btnCambiarPassword = findViewById(R.id.btnCambiarPassword);
@@ -70,13 +77,10 @@ public class ResetPasswordActivity extends AppCompatActivity {
         String nuevaPassword = sinRecortar(etNuevaPassword);
         String confirmar = sinRecortar(etConfirmarPassword);
 
-        String error = Validadores.codigo(codigo);
-        if (error == null) error = Validadores.passwordNueva(nuevaPassword);
-        if (error == null) error = Validadores.confirmacion(nuevaPassword, confirmar);
-        if (error != null) {
-            Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
-            return;
-        }
+        boolean hayError = CamposUi.error(etCodigo, Validadores.codigo(codigo));
+        hayError |= CamposUi.error(etNuevaPassword, Validadores.passwordNueva(nuevaPassword));
+        hayError |= CamposUi.error(etConfirmarPassword, Validadores.confirmacion(nuevaPassword, confirmar));
+        if (hayError) return;
         if (enCurso) return;
 
         setLoading(true);
@@ -88,16 +92,19 @@ public class ResetPasswordActivity extends AppCompatActivity {
                     public void onResponse(Call<MensajeResponse> call, Response<MensajeResponse> response) {
                         setLoading(false);
                         if (response.isSuccessful()) {
+                            // El reset cierra TODAS las sesiones de la cuenta: si en este teléfono quedaba un token
+                            // guardado ya no sirve, se borra. Y como el código llegó a su casilla, el backend deja
+                            // el email verificado: el login funciona directo, sin pedir verificación.
+                            SesionUtils.limpiar(ResetPasswordActivity.this);
                             Toast.makeText(ResetPasswordActivity.this,
                                     "Contraseña actualizada. Iniciá sesión.", Toast.LENGTH_LONG).show();
                             Intent intent = new Intent(ResetPasswordActivity.this, LoginActivity.class);
                             intent.putExtra("email", email);
-                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             startActivity(intent);
                             finish();
                         } else {
-                            Toast.makeText(ResetPasswordActivity.this,
-                                    ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
+                            mostrarError(ApiErrores.rechazo(response));
                         }
                     }
 
@@ -119,6 +126,7 @@ public class ResetPasswordActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(Call<MensajeResponse> call, Response<MensajeResponse> response) {
                         if (response.isSuccessful()) {
+                            CamposUi.error(etCodigo, null); // el "demasiados intentos" era del código anterior
                             Toast.makeText(ResetPasswordActivity.this,
                                     "Código reenviado. Revisá tu email", Toast.LENGTH_SHORT).show();
                         } else {
@@ -133,6 +141,24 @@ public class ResetPasswordActivity extends AppCompatActivity {
                                 ApiErrores.mensajeFallo(t), Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    /**
+     * Errores del código o de la contraseña nueva debajo de su campo. Tras 5 errores el backend rechaza
+     * ESE código aunque después se ingrese el correcto: se borra el campo y se resalta "Reenviar".
+     */
+    private void mostrarError(ApiErrores.Rechazo rechazo) {
+        String errorCodigo = rechazo.campos.get("codigo");
+        if (errorCodigo != null && ApiErrores.esCodigoAgotado(errorCodigo)) {
+            etCodigo.setText("");
+            esperaReenvio.destacar();
+        }
+        Map<String, EditText> campos = new HashMap<>();
+        campos.put("codigo", etCodigo);
+        campos.put("nuevaPassword", etNuevaPassword);
+        if (!CamposUi.errores(rechazo.campos, campos)) {
+            Toast.makeText(this, rechazo.mensaje, Toast.LENGTH_LONG).show();
+        }
     }
 
     private void setLoading(boolean loading) {

@@ -1,5 +1,6 @@
 package com.example.payxmobile;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -59,6 +60,22 @@ public class ValidadoresTest {
         assertNotNull(Validadores.nombreUsuario("an"));
         assertNotNull(Validadores.nombreUsuario(repetir('a', 21)));
         assertNotNull(Validadores.nombreUsuario(""));
+    }
+
+    // (d) Auditoría: 3 a 20 caracteres y solo ^[a-zA-Z0-9._-]+$ (se usa como "@usuario" para transferir)
+    @Test
+    public void d_nombreUsuarioSoloLetrasNumerosPuntosYGuiones() {
+        assertNull(Validadores.nombreUsuario("juan.perez_1"));
+        assertNull(Validadores.nombreUsuario("Juan-Perez"));
+        assertNull(Validadores.nombreUsuario("a.b"));
+        assertEquals(Validadores.MSG_NOMBRE_USUARIO_CARACTERES, Validadores.nombreUsuario("con espacio"));
+        assertEquals(Validadores.MSG_NOMBRE_USUARIO_CARACTERES, Validadores.nombreUsuario("Ana Perez"));
+        assertEquals(Validadores.MSG_NOMBRE_USUARIO_CARACTERES, Validadores.nombreUsuario("@juan"));
+        assertEquals(Validadores.MSG_NOMBRE_USUARIO_CARACTERES, Validadores.nombreUsuario("juan@mail"));
+        assertEquals("sin acentos ni ñ", Validadores.MSG_NOMBRE_USUARIO_CARACTERES, Validadores.nombreUsuario("peña"));
+        assertEquals("El nombre de usuario debe tener entre 3 y 20 caracteres", Validadores.nombreUsuario("ab"));
+        assertEquals("El nombre de usuario debe tener entre 3 y 20 caracteres", Validadores.nombreUsuario(repetir('a', 21)));
+        assertEquals("Solo letras, números, puntos, guiones y guiones bajos", Validadores.MSG_NOMBRE_USUARIO_CARACTERES);
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.example.payxmobile.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,6 +16,9 @@ import com.example.payxmobile.network.RetrofitClient;
 import com.example.payxmobile.utils.CamposUi;
 import com.example.payxmobile.utils.Validadores;
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -82,8 +86,12 @@ public class RegistroActivity extends AppCompatActivity {
                             intent.putExtra("email", emailDestino);
                             startActivity(intent);
                         } else {
-                            Toast.makeText(RegistroActivity.this,
-                                    ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
+                            // "El email ya esta registrado", "El nombre de usuario ya esta en uso" (sin
+                            // distinguir mayúsculas), "El DNI ya esta registrado" o un @Valid: en su campo
+                            ApiErrores.Rechazo rechazo = ApiErrores.rechazo(response);
+                            if (!CamposUi.errores(rechazo.campos, campos())) {
+                                Toast.makeText(RegistroActivity.this, rechazo.mensaje, Toast.LENGTH_LONG).show();
+                            }
                         }
                     }
 
@@ -100,6 +108,18 @@ public class RegistroActivity extends AppCompatActivity {
         enCurso = loading;
         btnRegistrarse.setEnabled(!loading);
         btnRegistrarse.setText(loading ? "Creando cuenta..." : "Crear cuenta");
+    }
+
+    /** Campo de cada nombre que usa el backend (RegistroRequest). */
+    private Map<String, EditText> campos() {
+        Map<String, EditText> campos = new HashMap<>();
+        campos.put("nombreCompleto", etNombreCompleto);
+        campos.put("email", etEmail);
+        campos.put("telefono", etTelefono);
+        campos.put("nombreUsuario", etNombreUsuario);
+        campos.put("dni", etDni);
+        campos.put("password", etPassword);
+        return campos;
     }
 
     private String getText(TextInputEditText field) {

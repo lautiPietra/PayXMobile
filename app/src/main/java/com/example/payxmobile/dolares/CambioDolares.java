@@ -8,6 +8,7 @@ import com.example.payxmobile.network.ApiService;
 import com.example.payxmobile.transferencias.FalloEnvio;
 import com.example.payxmobile.transferencias.Moneda;
 import com.example.payxmobile.transferencias.MontoInput;
+import com.example.payxmobile.transferencias.ValidadorMonto;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -24,7 +25,8 @@ import retrofit2.Response;
  * - COMPRA: el monto son PESOS y se usa el precio "venta" de la cotización (lo que paga el usuario).
  * - VENTA: el monto son DÓLARES y se usa el precio "compra" (lo que recibe).
  *   Son los precios del lado de la casa de cambio; ver {@link #precioPara}.
- * - El "Recibís" es solo un preview con la cotización mostrada; lo real es lo que devuelve el POST.
+ * - El "Recibís" es solo un preview con la cotización mostrada; lo real es lo que devuelve el POST. Redondea
+ *   igual que el backend: SIEMPRE hacia abajo (DOWN), así nunca promete un centavo que después no acredita.
  * - El POST NO tiene idempotencia en el backend: un solo pedido en vuelo, por el cliente sin
  *   reintentos, y si no llega respuesta se pasa a INCIERTO (no se reintenta solo).
  * Sin Android: la Activity lo guarda en un ViewModel para que sobreviva a la rotación.
@@ -35,8 +37,10 @@ public class CambioDolares {
 
     public enum Paso { FORMULARIO, CONFIRMAR, EXITO, INCIERTO }
 
-    public static final String MSG_MONTO_INVALIDO = "Ingresá un monto válido.";
-    public static final String MSG_DECIMALES = "El monto puede tener como máximo 2 decimales.";
+    public static final String MSG_MONTO_INVALIDO = ValidadorMonto.MSG_MONTO_INVALIDO;
+    public static final String MSG_DECIMALES = ValidadorMonto.msgDecimales(2);
+    public static final String MSG_MUY_BAJO_COMPRA = "El monto es muy bajo: no alcanza para comprar ni un centavo de dólar.";
+    public static final String MSG_MUY_BAJO_VENTA = "El monto es muy bajo para esta cotización.";
     public static final String MSG_SIN_COTIZACION = "Todavía no tenemos la cotización disponible.";
     public static final String MSG_ERROR_COTIZACION = "No pudimos obtener la cotización del dólar. Probá de nuevo en un momento.";
     public static final String MSG_SIN_SALDO = "Todavía no pudimos cargar tu saldo. Probá de nuevo en unos segundos.";
@@ -106,27 +110,29 @@ public class CambioDolares {
     }
 
     /**
-     * Preview de lo que se recibe, con el mismo redondeo que el backend (2 decimales HALF_UP):
-     * COMPRA -> US$ = pesos / venta; VENTA -> $ = dólares × compra. null si falta el monto o el precio.
+     * Preview de lo que se recibe, con el mismo redondeo que el backend (2 decimales, DOWN: lo que
+     * recibe el usuario nunca se redondea para arriba). COMPRA -> US$ = pesos / venta; VENTA -> $ =
+     * dólares × compra. Ej.: $ 10.000 a 1.530 = US$ 6,53 (no 6,54). null si falta el monto o el precio.
      */
     public static BigDecimal preview(Tipo tipo, BigDecimal monto, BigDecimal precio) {
         if (monto == null || precio == null || monto.signum() <= 0 || precio.signum() <= 0) return null;
         return tipo == Tipo.COMPRA
-                ? monto.divide(precio, 2, RoundingMode.HALF_UP)
-                : monto.multiply(precio).setScale(2, RoundingMode.HALF_UP);
+                ? monto.divide(precio, 2, RoundingMode.DOWN)
+                : monto.multiply(precio).setScale(2, RoundingMode.DOWN);
     }
 
     /**
-     * Validación local ANTES de mandar nada. null = OK. El "monto muy bajo" NO se valida acá: lo
-     * decide el backend con la cotización real y su mensaje se muestra tal cual.
+     * Validación local ANTES de mandar nada. null = OK. Si con la cotización mostrada no se recibiría ni
+     * un centavo (preview 0,00), no se manda: el backend lo rechazaría igual.
      */
     public static String validar(Tipo tipo, String montoTexto, BigDecimal saldoDisponible, BigDecimal precio) {
         if (precio == null) return MSG_SIN_COTIZACION;
+        String errorMonto = ValidadorMonto.validar(montoTexto, monedaEntrada(tipo).decimales);
+        if (errorMonto != null) return errorMonto;
         BigDecimal monto = MontoInput.parsear(montoTexto);
-        if (monto == null || monto.signum() <= 0) return MSG_MONTO_INVALIDO;
-        BigDecimal limpio = monto.stripTrailingZeros();
-        if (limpio.scale() > 2) return MSG_DECIMALES;
-        if (limpio.precision() - limpio.scale() > Moneda.MAX_ENTEROS) return MSG_MONTO_INVALIDO;
+        if (preview(tipo, monto, precio).signum() == 0) {
+            return tipo == Tipo.COMPRA ? MSG_MUY_BAJO_COMPRA : MSG_MUY_BAJO_VENTA;
+        }
         if (saldoDisponible == null) return MSG_SIN_SALDO;
         if (monto.compareTo(saldoDisponible) > 0) {
             return tipo == Tipo.COMPRA ? MSG_INSUFICIENTE_COMPRA : MSG_INSUFICIENTE_VENTA;
@@ -143,6 +149,13 @@ public class CambioDolares {
         montoTexto = t;
         if (paso == Paso.FORMULARIO) error = null;
         return true;
+    }
+
+    /** El filtro de tipeo frenó un decimal de más: se avisa en el formulario hasta que siga tipeando. */
+    public void avisarDecimales() {
+        if (paso != Paso.FORMULARIO) return;
+        error = ValidadorMonto.msgDecimales(getMonedaEntrada().decimales);
+        notificar();
     }
 
     /** "Usar todo": el saldo exacto de la moneda que se entrega. */

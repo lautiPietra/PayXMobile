@@ -127,7 +127,25 @@ public class EnvioTransferenciaTest {
         EnvioTransferencia e = nuevo(Moneda.PESOS);
         e.precargar("ana", "0.005", null, null);
         assertEquals("", e.getMontoTexto());
-        assertEquals(ValidadorTransferencia.MONTO_INVALIDO, e.getError());
+        assertEquals("El monto puede tener hasta 2 decimales.", e.getError());
+    }
+
+    @Test
+    public void t12_precargaConCerosDeMasLosIgnora() {
+        EnvioTransferencia e = nuevo(Moneda.PESOS);
+        e.precargar("ana", "10.500", null, null);
+        assertEquals("10.500 son 10,50: vale", "10,50", e.getMontoTexto());
+        assertNull(e.getError());
+    }
+
+    @Test
+    public void t12_avisoDeDecimalesDelFiltroSeBorraAlSeguirTipeando() {
+        EnvioTransferencia e = nuevo(Moneda.USD);
+        assertTrue(e.setMonto("0,00"));
+        e.avisarDecimales(); // el filtro frenó el "5" de "0,005"
+        assertEquals("El monto puede tener hasta 2 decimales.", e.getError());
+        assertTrue(e.setMonto("0,01"));
+        assertNull(e.getError());
     }
 
     // ── T2: resolver destinatario ─────────────────────────────────────────────

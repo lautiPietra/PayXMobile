@@ -39,6 +39,16 @@ public class ImagenPerfilTest {
     }
 
     @Test
+    public void masDe5MbNoSeSube_413DelBackend() {
+        // El backend corta a 5 MB el archivo Y el pedido entero (413 "El archivo es demasiado grande (maximo 5 MB)"):
+        // se valida antes de subir, dejando lugar para los encabezados del multipart
+        assertEquals(true, ImagenPerfil.entraEnElLimite(600 * 1024));
+        assertEquals(true, ImagenPerfil.entraEnElLimite(ImagenPerfil.PESO_MAXIMO_JPEG));
+        assertEquals(false, ImagenPerfil.entraEnElLimite(ImagenPerfil.PESO_MAXIMO));
+        assertEquals(false, ImagenPerfil.entraEnElLimite(6L * 1024 * 1024));
+    }
+
+    @Test
     public void constantesDelContrato() {
         assertEquals("archivo", ImagenPerfil.NOMBRE_PARTE);
         assertEquals("image/jpeg", ImagenPerfil.TIPO_JPEG.toString());

@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 public final class ValidadorTransferencia {
 
     public static final String SIN_DESTINATARIO = "Ingresá a quién le querés transferir.";
-    public static final String MONTO_INVALIDO = "Ingresá un monto válido.";
+    public static final String MONTO_INVALIDO = ValidadorMonto.MSG_MONTO_INVALIDO;
     public static final String SALDO_INSUFICIENTE = "No tenés saldo suficiente para esta transferencia.";
     public static final String DESTINATARIO_LARGO = "El destinatario no puede superar los 60 caracteres.";
 
@@ -20,11 +20,11 @@ public final class ValidadorTransferencia {
         if (dest.isEmpty()) return SIN_DESTINATARIO;
         if (dest.length() > 60) return DESTINATARIO_LARGO;
 
+        // Vacío, 0, negativo, más de 13 enteros o más decimales de los que admite la moneda (2 en PESOS
+        // y USD, 8 en cripto; los ceros de más no cuentan)
+        String errorMonto = ValidadorMonto.validar(montoTexto, moneda.decimales);
+        if (errorMonto != null) return errorMonto;
         BigDecimal monto = MontoInput.parsear(montoTexto);
-        // Monto vacío, 0, negativo, o con más decimales/enteros de los permitidos
-        if (monto == null || monto.signum() <= 0 || !MontoInput.esTipeoValido(montoTexto.trim(), moneda)) {
-            return MONTO_INVALIDO;
-        }
         if (saldo == null || monto.compareTo(saldo) > 0) return SALDO_INSUFICIENTE;
         return null;
     }

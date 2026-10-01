@@ -27,6 +27,9 @@ public final class ImagenPerfil {
     public static final int LADO_MAXIMO = 1280;
     public static final int CALIDAD_JPEG = 85;
     public static final long PESO_MAXIMO = 5L * 1024 * 1024;
+    // El backend limita a 5 MB el archivo Y el pedido entero: queda lugar para los encabezados del multipart
+    public static final long PESO_MAXIMO_JPEG = PESO_MAXIMO - 16 * 1024;
+    public static final String MSG_DEMASIADO_GRANDE = "La imagen es demasiado grande (máximo 5 MB). Probá con otra";
     public static final String NOMBRE_PARTE = "archivo";
     public static final MediaType TIPO_JPEG = MediaType.get("image/jpeg");
 
@@ -80,14 +83,24 @@ public final class ImagenPerfil {
                 escalado.compress(Bitmap.CompressFormat.JPEG, calidad, out);
                 jpeg = out.toByteArray();
                 calidad -= 15;
-            } while (jpeg.length >= PESO_MAXIMO && calidad > 20);
+            } while (!entraEnElLimite(jpeg.length) && calidad > 20);
             escalado.recycle();
+            // A 1280 px no pasa en la práctica; si pasara, no se sube (el backend respondería 413)
+            if (!entraEnElLimite(jpeg.length)) throw new ImagenInvalidaException(MSG_DEMASIADO_GRANDE);
             return jpeg;
         } catch (IOException | SecurityException e) {
             throw new ImagenInvalidaException("No pudimos abrir esa imagen. Probá con otra");
         } catch (OutOfMemoryError e) {
             throw new ImagenInvalidaException("La imagen es demasiado grande para procesarla. Probá con otra");
+        } catch (RuntimeException e) {
+            // Corre en un executor: una excepción sin atrapar ahí cerraría la app
+            throw new ImagenInvalidaException("No pudimos leer esa imagen. Probá con otra (JPG, PNG o WEBP)");
         }
+    }
+
+    /** ¿Se puede subir un JPEG de este tamaño? */
+    public static boolean entraEnElLimite(long bytes) {
+        return bytes <= PESO_MAXIMO_JPEG;
     }
 
     public static MultipartBody.Part crearParte(byte[] jpeg) {

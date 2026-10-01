@@ -1,5 +1,6 @@
 package com.example.payxmobile.network;
 
+import com.example.payxmobile.transferencias.MontoInput;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
@@ -21,9 +22,7 @@ public class BigDecimalPlano extends TypeAdapter<BigDecimal> {
             out.nullValue();
             return;
         }
-        BigDecimal limpio = valor.stripTrailingZeros();
-        if (limpio.scale() < 0) limpio = limpio.setScale(0);
-        out.jsonValue(limpio.toPlainString());
+        out.jsonValue(MontoInput.plano(valor));
     }
 
     @Override

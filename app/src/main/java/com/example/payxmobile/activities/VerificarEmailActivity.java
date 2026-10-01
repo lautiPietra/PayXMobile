@@ -16,6 +16,7 @@ import com.example.payxmobile.model.ReenviarCodigoRequest;
 import com.example.payxmobile.model.VerificarCodigoRequest;
 import com.example.payxmobile.network.ApiErrores;
 import com.example.payxmobile.network.RetrofitClient;
+import com.example.payxmobile.utils.CamposUi;
 import com.example.payxmobile.utils.EsperaReenvio;
 import com.example.payxmobile.utils.Validadores;
 import com.google.android.material.textfield.TextInputEditText;
@@ -45,6 +46,7 @@ public class VerificarEmailActivity extends AppCompatActivity {
         }
 
         etCodigo = findViewById(R.id.etCodigo);
+        CamposUi.codigoEspaciado(etCodigo, 22);
         btnVerificar = findViewById(R.id.btnVerificar);
         progressBar = findViewById(R.id.progressBar);
 
@@ -69,11 +71,7 @@ public class VerificarEmailActivity extends AppCompatActivity {
     private void verificar() {
         String codigo = etCodigo.getText() != null ? etCodigo.getText().toString().trim() : "";
 
-        String errorCodigo = Validadores.codigo(codigo);
-        if (errorCodigo != null) {
-            Toast.makeText(this, errorCodigo, Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (CamposUi.error(etCodigo, Validadores.codigo(codigo))) return;
         if (enCurso) return;
 
         setLoading(true);
@@ -93,7 +91,7 @@ public class VerificarEmailActivity extends AppCompatActivity {
                             startActivity(intent);
                             finish();
                         } else {
-                            mostrarError(response);
+                            mostrarErrorCodigo(ApiErrores.rechazo(response));
                         }
                     }
 
@@ -115,10 +113,12 @@ public class VerificarEmailActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(Call<MensajeResponse> call, Response<MensajeResponse> response) {
                         if (response.isSuccessful()) {
+                            CamposUi.error(etCodigo, null); // el "demasiados intentos" era del código anterior
                             Toast.makeText(VerificarEmailActivity.this,
                                     "Código reenviado. Revisá tu email", Toast.LENGTH_SHORT).show();
                         } else {
-                            mostrarError(response);
+                            Toast.makeText(VerificarEmailActivity.this,
+                                    ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
                         }
                     }
 
@@ -137,7 +137,20 @@ public class VerificarEmailActivity extends AppCompatActivity {
         progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
-    private void mostrarError(Response<?> response) {
-        Toast.makeText(this, ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
+    /**
+     * "Codigo incorrecto", "El codigo expiro...", etc. debajo del campo. Tras 5 errores el backend rechaza
+     * ESE código aunque después se ingrese el correcto: se borra el campo y se resalta "Reenviar".
+     */
+    private void mostrarErrorCodigo(ApiErrores.Rechazo rechazo) {
+        String errorCodigo = rechazo.campos.get("codigo");
+        if (errorCodigo == null) {
+            Toast.makeText(this, rechazo.mensaje, Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (ApiErrores.esCodigoAgotado(errorCodigo)) {
+            etCodigo.setText("");
+            esperaReenvio.destacar();
+        }
+        CamposUi.error(etCodigo, errorCodigo);
     }
 }

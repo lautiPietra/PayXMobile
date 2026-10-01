@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
@@ -33,8 +32,8 @@ import com.example.payxmobile.plazofijo.PlazosFijosRepository;
 import com.example.payxmobile.saldos.EstadoSaldos;
 import com.example.payxmobile.saldos.SaldosRepository;
 import com.example.payxmobile.transferencias.Moneda;
-import com.example.payxmobile.transferencias.MontoInput;
 import com.example.payxmobile.transferencias.Refrescos;
+import com.example.payxmobile.transferencias.ui.FiltroMonto;
 import com.example.payxmobile.utils.MontoFormatter;
 import com.example.payxmobile.utils.SesionUtils;
 import com.google.gson.Gson;
@@ -203,12 +202,8 @@ public class PlazoFijoActivity extends AppCompatActivity {
         actualizandoCampo = true;
         etMonto.setText(constitucion.getMontoTexto());
         actualizandoCampo = false;
-        // Bloquea el tipeo de más de 2 decimales o más de 13 enteros
-        etMonto.setFilters(new InputFilter[]{(fuente, inicio, fin, destino, dInicio, dFin) -> {
-            String resultado = destino.subSequence(0, dInicio) + fuente.subSequence(inicio, fin).toString()
-                    + destino.subSequence(dFin, destino.length());
-            return MontoInput.esTipeoValido(resultado, Moneda.PESOS) ? null : "";
-        }});
+        // Bloquea el tipeo de más de 2 decimales o más de 13 enteros, y avisa
+        FiltroMonto.instalar(etMonto, () -> Moneda.PESOS, constitucion::avisarDecimales);
         etMonto.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
             @Override public void onTextChanged(CharSequence s, int a, int b, int c) {}

@@ -63,11 +63,9 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:inputType="number"
-                android:letterSpacing="0.4"
                 android:maxLength="6"
                 android:textColor="@color/white"
-                android:textColorHint="@color/text_hint"
-                android:textSize="22sp" />
+                android:textColorHint="@color/text_hint" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <Button

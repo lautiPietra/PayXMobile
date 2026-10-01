@@ -9,6 +9,7 @@ import com.example.payxmobile.network.ApiService;
 import com.example.payxmobile.transferencias.FalloEnvio;
 import com.example.payxmobile.transferencias.Moneda;
 import com.example.payxmobile.transferencias.MontoInput;
+import com.example.payxmobile.transferencias.ValidadorMonto;
 import com.example.payxmobile.utils.MontoFormatter;
 
 import java.math.BigDecimal;
@@ -36,8 +37,8 @@ public class ConstitucionPlazoFijo {
     public enum Paso { FORMULARIO, CONFIRMAR, EXITO, INCIERTO }
 
     public static final String MSG_PLAZO_INVALIDO = "Elegí un plazo válido.";
-    public static final String MSG_MONTO_INVALIDO = "Ingresá un monto válido.";
-    public static final String MSG_DECIMALES = "El monto puede tener como máximo 2 decimales.";
+    public static final String MSG_MONTO_INVALIDO = ValidadorMonto.MSG_MONTO_INVALIDO;
+    public static final String MSG_DECIMALES = ValidadorMonto.msgDecimales(2);
     public static final String MSG_SIN_TASAS = "Todavía no tenemos las tasas disponibles.";
     public static final String MSG_ERROR_TASAS = "No pudimos cargar las tasas disponibles. Probá de nuevo en un momento.";
     public static final String MSG_SIN_SALDO = "Todavía no pudimos cargar tu saldo. Probá de nuevo en unos segundos.";
@@ -137,11 +138,9 @@ public class ConstitucionPlazoFijo {
         if (!tasasValidas(t)) return MSG_SIN_TASAS;
         if (tasaPara(t, dias) == null) return MSG_PLAZO_INVALIDO;
         if (limiteAlcanzado(t, activos)) return msgLimite(t.getMaxActivos());
+        String errorMonto = ValidadorMonto.validar(montoTexto, Moneda.PESOS.decimales);
+        if (errorMonto != null) return errorMonto;
         BigDecimal monto = MontoInput.parsear(montoTexto);
-        if (monto == null || monto.signum() <= 0) return MSG_MONTO_INVALIDO;
-        BigDecimal limpio = monto.stripTrailingZeros();
-        if (limpio.scale() > 2) return MSG_DECIMALES;
-        if (limpio.precision() - limpio.scale() > Moneda.MAX_ENTEROS) return MSG_MONTO_INVALIDO;
         if (monto.compareTo(t.getMontoMinimo()) < 0) return msgMinimo(t.getMontoMinimo());
         if (saldoPesos == null) return MSG_SIN_SALDO;
         if (monto.compareTo(saldoPesos) > 0) return MSG_INSUFICIENTE;
@@ -211,6 +210,13 @@ public class ConstitucionPlazoFijo {
         montoTexto = t;
         if (paso == Paso.FORMULARIO) error = null;
         return true;
+    }
+
+    /** El filtro de tipeo frenó un decimal de más: se avisa en el formulario hasta que siga tipeando. */
+    public void avisarDecimales() {
+        if (paso != Paso.FORMULARIO) return;
+        error = MSG_DECIMALES;
+        notificar();
     }
 
     /** Solo acepta un plazo que haya llegado en /tasas. */

@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -31,6 +32,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -243,9 +246,13 @@ public class PerfilActivity extends AppCompatActivity {
                             mostrarPerfil(p, true);
                             Toast.makeText(PerfilActivity.this,
                                     "Perfil actualizado correctamente", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(PerfilActivity.this,
-                                    ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
+                        } else if (!ApiErrores.esSesionInvalida(response)) { // 401: ya se va al login
+                            // "El nombre de usuario ya esta en uso" (sin distinguir mayúsculas), "El alias
+                            // ya esta en uso", "El DNI ya esta registrado" o un @Valid: en su campo
+                            ApiErrores.Rechazo rechazo = ApiErrores.rechazo(response);
+                            if (!CamposUi.errores(rechazo.campos, camposEditables())) {
+                                Toast.makeText(PerfilActivity.this, rechazo.mensaje, Toast.LENGTH_LONG).show();
+                            }
                         }
                     }
 
@@ -263,6 +270,16 @@ public class PerfilActivity extends AppCompatActivity {
         guardando = valor;
         btnGuardar.setEnabled(!valor);
         btnGuardar.setText(valor ? "Guardando..." : "Guardar cambios");
+    }
+
+    /** Campo de cada nombre que usa el backend (ActualizarPerfilRequest). */
+    private Map<String, EditText> camposEditables() {
+        Map<String, EditText> campos = new HashMap<>();
+        campos.put("nombreUsuario", etNombreUsuario);
+        campos.put("alias", etAlias);
+        campos.put("telefono", etTelefono);
+        campos.put("dni", etDni);
+        return campos;
     }
 
     // ── Foto de perfil ───────────────────────────────────────────────────────

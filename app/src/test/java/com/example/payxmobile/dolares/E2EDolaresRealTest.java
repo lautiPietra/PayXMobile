@@ -119,8 +119,10 @@ public class E2EDolaresRealTest {
                 + " cotizacion=" + rc.getCotizacion() + " (mostrada: venta=" + vista.getVenta() + ", compra=" + vista.getCompra() + ")");
         assertEquals("COMPRA", rc.getTipo());
         assertEquals(0, PESOS_A_COMPRAR.compareTo(rc.getMontoPesos()));
-        assertEquals("montoUsd = pesos / cotización, 2 decimales HALF_UP",
-                PESOS_A_COMPRAR.divide(rc.getCotizacion(), 2, RoundingMode.HALF_UP), rc.getMontoUsd());
+        assertEquals("montoUsd = pesos / cotización, 2 decimales DOWN (lo que recibe el usuario nunca se redondea para arriba)",
+                PESOS_A_COMPRAR.divide(rc.getCotizacion(), 2, RoundingMode.DOWN), rc.getMontoUsd());
+        assertEquals("el preview de la app promete lo mismo que se acreditó",
+                CambioDolares.preview(CambioDolares.Tipo.COMPRA, PESOS_A_COMPRAR, rc.getCotizacion()), rc.getMontoUsd());
 
         PerfilResponse trasCompra = perfil();
         assertEquals("pesos bajan EXACTO lo pedido", antes.getSaldoPesos().subtract(PESOS_A_COMPRAR), trasCompra.getSaldoPesos());
@@ -134,8 +136,8 @@ public class E2EDolaresRealTest {
         System.out.println("VENTA  -> montoUsd=" + rv.getMontoUsd() + " montoPesos=" + rv.getMontoPesos() + " cotizacion=" + rv.getCotizacion());
         assertEquals("VENTA", rv.getTipo());
         assertEquals(rc.getMontoUsd(), rv.getMontoUsd());
-        assertEquals("montoPesos = usd × cotización, 2 decimales HALF_UP",
-                rv.getMontoUsd().multiply(rv.getCotizacion()).setScale(2, RoundingMode.HALF_UP), rv.getMontoPesos());
+        assertEquals("montoPesos = usd × cotización, 2 decimales DOWN",
+                rv.getMontoUsd().multiply(rv.getCotizacion()).setScale(2, RoundingMode.DOWN), rv.getMontoPesos());
 
         PerfilResponse despues = perfil();
         assertEquals("dólares vuelven al inicio", antes.getSaldoUsd(), despues.getSaldoUsd());

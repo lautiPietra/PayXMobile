@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo DEBUG: permite http para el backend local (10.0.2.2 en el emulador, la IP de la PC en el
+     teléfono o localhost con "adb reverse"). El release usa src/main/res/xml/network_security_config.xml:
+     solo https. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

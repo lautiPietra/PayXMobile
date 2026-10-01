@@ -1,8 +1,12 @@
 package com.example.payxmobile.utils;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.drawable.GradientDrawable;
 import android.os.CountDownTimer;
+import android.view.View;
 import android.widget.TextView;
 
 /**
@@ -47,9 +51,35 @@ public class EsperaReenvio {
 
     /** Llamar al tocar "Reenviar", antes de mandar la request. */
     public void iniciar() {
+        apagarDestacado();
         long fin = System.currentTimeMillis() + ESPERA_MS;
         prefs.edit().putLong(clave, fin).apply();
         correr(fin);
+    }
+
+    /**
+     * El código actual ya no sirve (5 intentos fallidos: el backend lo rechaza aunque después se ingrese el
+     * correcto). Se resalta "Reenviar" con un borde y un pulso para que pidan uno nuevo; se apaga al reenviar.
+     */
+    public void destacar() {
+        float d = boton.getResources().getDisplayMetrics().density;
+        GradientDrawable borde = new GradientDrawable();
+        borde.setCornerRadius(16 * d);
+        borde.setStroke(Math.round(1.5f * d), boton.getCurrentTextColor());
+        boton.setBackground(borde);
+        int h = Math.round(12 * d), v = Math.round(6 * d);
+        boton.setPadding(h, v, h, v);
+        ObjectAnimator pulso = ObjectAnimator.ofPropertyValuesHolder(boton,
+                PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.15f, 1f),
+                PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.15f, 1f));
+        pulso.setDuration(700);
+        pulso.setRepeatCount(2);
+        pulso.start();
+    }
+
+    private void apagarDestacado() {
+        boton.setBackground(null);
+        boton.setPadding(0, 0, 0, 0);
     }
 
     /** Llamar en onDestroy. */

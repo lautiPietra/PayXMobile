@@ -2,6 +2,7 @@ package com.example.payxmobile.activities;
 
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,6 +15,9 @@ import com.example.payxmobile.network.RetrofitClient;
 import com.example.payxmobile.utils.CamposUi;
 import com.example.payxmobile.utils.Validadores;
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -57,7 +61,9 @@ public class CambiarPasswordActivity extends AppCompatActivity {
         btnCambiar.setEnabled(false);
         btnCambiar.setText("Cambiando...");
 
-        RetrofitClient.getService(this)
+        // Sin reintentos: si OkHttp reintentara un pedido que ya cambió la contraseña, el segundo fallaría
+        // ("La contrasena actual es incorrecta") y se perdería el token nuevo que traía el primero.
+        RetrofitClient.getServiceSinReintentos(this)
                 .cambiarPassword(new CambiarPasswordRequest(actual, nueva))
                 .enqueue(new Callback<MensajeResponse>() {
                     @Override
@@ -66,16 +72,22 @@ public class CambiarPasswordActivity extends AppCompatActivity {
                         btnCambiar.setEnabled(true);
                         btnCambiar.setText("Cambiar contraseña");
                         if (response.isSuccessful()) {
-                            // El JWT sigue siendo válido: la sesión no se cierra
+                            // El backend cerró todas las sesiones de la cuenta menos esta: el token nuevo vino en
+                            // X-Renewed-Token y el interceptor de RetrofitClient ya lo guardó, así que se sigue
+                            // logueado. En los otros dispositivos, el próximo pedido da 401 y van al login.
                             etPasswordActual.setText("");
                             etNuevaPassword.setText("");
                             etConfirmarPassword.setText("");
                             Toast.makeText(CambiarPasswordActivity.this,
                                     "Contraseña actualizada correctamente", Toast.LENGTH_SHORT).show();
                             finish();
-                        } else {
-                            Toast.makeText(CambiarPasswordActivity.this,
-                                    ApiErrores.mensaje(response), Toast.LENGTH_LONG).show();
+                        } else if (!ApiErrores.esSesionInvalida(response)) { // 401: ya se va al login
+                            // "La contrasena actual es incorrecta" o el aviso de cuenta creada con Google
+                            // (largo: en un Toast se cortaría) debajo del campo que corresponde
+                            ApiErrores.Rechazo rechazo = ApiErrores.rechazo(response);
+                            if (!CamposUi.errores(rechazo.campos, campos())) {
+                                Toast.makeText(CambiarPasswordActivity.this, rechazo.mensaje, Toast.LENGTH_LONG).show();
+                            }
                         }
                     }
 
@@ -88,6 +100,14 @@ public class CambiarPasswordActivity extends AppCompatActivity {
                                 ApiErrores.mensajeFallo(t), Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    /** Campo de cada nombre que usa el backend (CambiarPasswordRequest). */
+    private Map<String, EditText> campos() {
+        Map<String, EditText> campos = new HashMap<>();
+        campos.put("passwordActual", etPasswordActual);
+        campos.put("nuevaPassword", etNuevaPassword);
+        return campos;
     }
 
     private String getText(TextInputEditText field) {

@@ -73,9 +73,13 @@ public class MontoYValidacionTest {
         assertEquals(ValidadorTransferencia.MONTO_INVALIDO, ValidadorTransferencia.validar("ana", "0", Moneda.PESOS, SALDO));
         assertEquals(ValidadorTransferencia.MONTO_INVALIDO, ValidadorTransferencia.validar("ana", "0,00", Moneda.PESOS, SALDO));
         assertEquals(ValidadorTransferencia.MONTO_INVALIDO, ValidadorTransferencia.validar("ana", "-5", Moneda.PESOS, SALDO));
-        assertEquals(ValidadorTransferencia.MONTO_INVALIDO, ValidadorTransferencia.validar("ana", "0,005", Moneda.PESOS, SALDO));
-        assertEquals(ValidadorTransferencia.MONTO_INVALIDO, ValidadorTransferencia.validar("ana", "0,000000001", Moneda.BTC, BigDecimal.ONE));
+        assertEquals("El monto puede tener hasta 2 decimales.", ValidadorTransferencia.validar("ana", "0,005", Moneda.PESOS, SALDO));
+        assertEquals("El monto puede tener hasta 2 decimales.", ValidadorTransferencia.validar("ana", "0,005", Moneda.USD, SALDO));
+        assertEquals("El monto puede tener hasta 8 decimales.", ValidadorTransferencia.validar("ana", "0,000000001", Moneda.BTC, BigDecimal.ONE));
+        assertEquals(ValidadorTransferencia.MONTO_INVALIDO, ValidadorTransferencia.validar("ana", "1e-7", Moneda.BTC, BigDecimal.ONE));
         assertEquals(ValidadorTransferencia.MONTO_INVALIDO, ValidadorTransferencia.validar("ana", "12345678901234", Moneda.PESOS, SALDO));
+        assertNull("los ceros de más no cuentan", ValidadorTransferencia.validar("ana", "10,500", Moneda.PESOS, SALDO));
+        assertNull(ValidadorTransferencia.validar("ana", "0,00000001", Moneda.BTC, BigDecimal.ONE));
         assertEquals(ValidadorTransferencia.SALDO_INSUFICIENTE, ValidadorTransferencia.validar("ana", "3700,01", Moneda.PESOS, SALDO));
         assertEquals("Ingresá a quién le querés transferir.", ValidadorTransferencia.SIN_DESTINATARIO);
         assertEquals("Ingresá un monto válido.", ValidadorTransferencia.MONTO_INVALIDO);

@@ -123,8 +123,15 @@ public class LoginActivity extends AppCompatActivity {
                         if (response.isSuccessful() && response.body() != null) {
                             guardarSesionYNavegar(response.body());
                         } else {
+                            // Un 401 acá es un login fallido, no una sesión vencida (el interceptor no lo toca):
+                            // el texto del backend va tal cual debajo de la contraseña. Ahí se lee entero, incluso
+                            // el de "Esta cuenta se creo con Google..." (en un Toast se cortaría a 2 líneas).
                             String mensaje = ApiErrores.mensaje(response);
-                            Toast.makeText(LoginActivity.this, mensaje, Toast.LENGTH_LONG).show();
+                            if (response.code() == 401) {
+                                CamposUi.error(etPassword, mensaje);
+                            } else {
+                                Toast.makeText(LoginActivity.this, mensaje, Toast.LENGTH_LONG).show();
+                            }
                             if (ApiErrores.esEmailSinVerificar(mensaje)) {
                                 emailSinVerificar = email;
                                 btnVerificarEmail.setVisibility(View.VISIBLE);

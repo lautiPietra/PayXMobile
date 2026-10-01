@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
@@ -31,6 +30,7 @@ import com.example.payxmobile.saldos.SaldosRepository;
 import com.example.payxmobile.transferencias.Moneda;
 import com.example.payxmobile.transferencias.MontoInput;
 import com.example.payxmobile.transferencias.Refrescos;
+import com.example.payxmobile.transferencias.ui.FiltroMonto;
 import com.example.payxmobile.utils.MontoFormatter;
 import com.example.payxmobile.utils.SesionUtils;
 
@@ -249,12 +249,8 @@ public class OperacionCriptoActivity extends AppCompatActivity {
 
     private void configurarMonto() {
         ponerTextoMonto(op.getMontoTexto());
-        // 2 decimales al pagar en pesos, 8 al vender cripto; 13 enteros como máximo
-        etMonto.setFilters(new InputFilter[]{(fuente, inicio, fin, destino, dInicio, dFin) -> {
-            String resultado = destino.subSequence(0, dInicio) + fuente.subSequence(inicio, fin).toString()
-                    + destino.subSequence(dFin, destino.length());
-            return MontoInput.esTipeoValido(resultado, op.getMonedaEntrada()) ? null : "";
-        }});
+        // 2 decimales al pagar en pesos, 8 al vender cripto; 13 enteros como máximo (y avisa)
+        FiltroMonto.instalar(etMonto, op::getMonedaEntrada, op::avisarDecimales);
         etMonto.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
             @Override public void onTextChanged(CharSequence s, int a, int b, int c) {}

@@ -16,18 +16,19 @@ import com.example.payxmobile.cajas.MovimientosCajaSesion;
 import com.example.payxmobile.cripto.CambiosCriptoRepository;
 import com.example.payxmobile.dolares.CambiosDolaresRepository;
 import com.example.payxmobile.dolares.CotizacionDolarRepository;
+import com.example.payxmobile.network.ApiErrores;
 import com.example.payxmobile.notificaciones.NotificacionesRepository;
 import com.example.payxmobile.plazofijo.PlazosFijosRepository;
 import com.example.payxmobile.saldos.SaldosRepository;
 import com.example.payxmobile.servicios.ServiciosRepository;
 import com.example.payxmobile.transferencias.TransferenciasRepository;
 
-/** Cierre de sesión en un solo lugar (logout manual y sesión vencida). */
+/** Cierre de sesión en un solo lugar (logout manual, sesión vencida o invalidada y reset de contraseña). */
 public final class SesionUtils {
 
     public static final String EXTRA_MENSAJE = "mensaje_login";
     public static final String MSG_SESION_VENCIDA = "Tu sesión venció. Iniciá sesión de nuevo";
-    public static final String MSG_SESION_INVALIDA = "Tu sesión ya no es válida. Iniciá sesión de nuevo";
+    public static final String MSG_SESION_INVALIDA = ApiErrores.MSG_SESION_INVALIDA;
 
     private SesionUtils() {}
 
@@ -66,6 +67,21 @@ public final class SesionUtils {
 
     private static void cerrar(Context context, String mensaje) {
         Context app = context.getApplicationContext();
+        limpiar(app);
+
+        // CLEAR_TASK: el botón "atrás" no puede volver a pantallas autenticadas
+        Intent intent = new Intent(app, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        if (mensaje != null) intent.putExtra(EXTRA_MENSAJE, mensaje);
+        app.startActivity(intent);
+    }
+
+    /**
+     * Borra la sesión guardada (token y datos del usuario) y todo lo que quedó en memoria de esa cuenta,
+     * sin navegar. Lo usa el cierre de sesión y el reset de contraseña, que invalida los tokens de la cuenta.
+     */
+    public static void limpiar(Context context) {
+        Context app = context.getApplicationContext();
         new SessionManager(app).clearSession();
         // Que la próxima cuenta no vea ni un instante los saldos de esta
         SaldosRepository.get(app).limpiar();
@@ -89,11 +105,5 @@ public final class SesionUtils {
                     @Override public void onResult(Void unused) {}
                     @Override public void onError(ClearCredentialException e) {}
                 });
-
-        // CLEAR_TASK: el botón "atrás" no puede volver a pantallas autenticadas
-        Intent intent = new Intent(app, LoginActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        if (mensaje != null) intent.putExtra(EXTRA_MENSAJE, mensaje);
-        app.startActivity(intent);
     }
 }

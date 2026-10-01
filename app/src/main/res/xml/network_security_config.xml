@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Release: SOLO https. El token de sesión nunca viaja sin cifrar. El build debug lo reemplaza por
+     src/debug/res/xml/network_security_config.xml, que permite http para el backend local. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

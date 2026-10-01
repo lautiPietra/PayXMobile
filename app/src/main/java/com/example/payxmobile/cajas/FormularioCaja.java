@@ -7,6 +7,7 @@ import com.example.payxmobile.network.ApiService;
 import com.example.payxmobile.network.EnvioSinReintento;
 import com.example.payxmobile.transferencias.Moneda;
 import com.example.payxmobile.transferencias.MontoInput;
+import com.example.payxmobile.transferencias.ValidadorMonto;
 
 import java.math.BigDecimal;
 import java.util.function.Consumer;
@@ -40,7 +41,7 @@ public class FormularioCaja {
     public static final String MSG_ICONO = "Elegí un ícono de la lista.";
     public static final String MSG_META_INVALIDA = "Ingresá una meta válida o dejala en blanco.";
     public static final String MSG_META_CERO = "La meta debe ser mayor a cero.";
-    public static final String MSG_META_DECIMALES = "La meta puede tener como máximo 2 decimales.";
+    public static final String MSG_META_DECIMALES = "La meta puede tener hasta 2 decimales.";
     public static final String MSG_NO_SE_PUDO = "No se pudo guardar la caja. Intentá de nuevo.";
     public static final String MSG_INCIERTO_CREAR =
             "No pudimos confirmar si la caja se creó. Revisá tus cajas antes de intentar de nuevo";
@@ -119,9 +120,11 @@ public class FormularioCaja {
             BigDecimal meta = MontoInput.parsear(metaTexto);
             if (meta == null) return MSG_META_INVALIDA;
             if (meta.signum() <= 0) return MSG_META_CERO;
-            BigDecimal m = meta.stripTrailingZeros();
-            if (m.scale() > 2) return MSG_META_DECIMALES;
-            if (m.precision() - m.scale() > Moneda.MAX_ENTEROS) return MSG_META_INVALIDA;
+            // Mismas reglas que un monto en pesos (2 decimales, 13 enteros), con los textos de la meta
+            String errorMonto = ValidadorMonto.validar(meta, Moneda.PESOS.decimales);
+            if (errorMonto != null) {
+                return ValidadorMonto.decimalesPermitidos(meta, Moneda.PESOS.decimales) ? MSG_META_INVALIDA : MSG_META_DECIMALES;
+            }
         }
         return null;
     }
@@ -202,6 +205,13 @@ public class FormularioCaja {
         metaTexto = t;
         if (paso == Paso.EDITANDO) error = null;
         return true;
+    }
+
+    /** El filtro de tipeo frenó un decimal de más en la meta: se avisa hasta que siga tipeando. */
+    public void avisarDecimales() {
+        if (paso != Paso.EDITANDO || enviando) return;
+        error = MSG_META_DECIMALES;
+        notificar();
     }
 
     // ── Guardar ───────────────────────────────────────────────────────────────
