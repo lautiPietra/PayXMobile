@@ -1,6 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
+
+// Configuración propia de cada PC (URL del backend). Sale de local.properties, que no se sube a git.
+val propiedadesLocales = Properties().apply {
+    val archivo = rootProject.file("local.properties")
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
+}
+
+// Orden de prioridad: -P<nombre> en la línea de comandos, después local.properties, después el valor por defecto.
+fun configuracionLocal(nombre: String): String? =
+    (project.findProperty(nombre) as String?) ?: propiedadesLocales.getProperty(nombre)?.trim()?.takeIf { it.isNotEmpty() }
 
 android {
     namespace = "com.example.payxmobile"
@@ -32,15 +44,15 @@ android {
     buildTypes {
         debug {
             // Backend local por http: el emulador ve la PC en 10.0.2.2. Teléfono físico: definí payxApiBaseUrl
-            // en gradle.properties (o pasá -PpayxApiBaseUrl=...) con la IP de la PC en la misma Wi-Fi.
-            val urlDebug = (project.findProperty("payxApiBaseUrl") as String?) ?: "http://10.0.2.2:8080/"
+            // en local.properties (o pasá -PpayxApiBaseUrl=...) con la IP de la PC en la misma Wi-Fi.
+            val urlDebug = configuracionLocal("payxApiBaseUrl") ?: "http://10.0.2.2:8080/"
             buildConfigField("String", "API_BASE_URL", "\"$urlDebug\"")
         }
         release {
             // URL pública del backend, SIEMPRE https (el release no permite http: network_security_config).
-            // TODO: todavía no hay dominio. Reemplazá el placeholder o pasá -PpayxApiBaseUrlRelease=https://...
+            // TODO: todavía no hay dominio. Definí payxApiBaseUrlRelease en local.properties o pasá -PpayxApiBaseUrlRelease=https://...
             // El dominio ".invalid" no existe: un release armado sin cambiarlo no le pega a ningún servidor.
-            val urlRelease = (project.findProperty("payxApiBaseUrlRelease") as String?)
+            val urlRelease = configuracionLocal("payxApiBaseUrlRelease")
                 ?: "https://cambiar-por-el-dominio-del-backend.invalid/"
             require(urlRelease.startsWith("https://") && urlRelease.endsWith("/")) {
                 "La URL del backend para release tiene que ser https y terminar en /: $urlRelease"

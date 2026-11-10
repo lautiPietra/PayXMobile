@@ -6,8 +6,10 @@ App Android nativa, en Java, de PayX: una billetera virtual simulada que usa el 
 
 Todavía no hay un APK publicado. El build release necesita el dominio del backend, que aún no existe.
 
+<!-- Agregar las capturas en docs/ y descomentar las líneas:
 ![Captura](docs/captura-1.png)
 ![Captura](docs/captura-2.png)
+-->
 
 ## Funcionalidades
 
@@ -36,7 +38,7 @@ Cada módulo (`transferencias`, `dolares`, `cripto`, `plazofijo`, `cajas`, `serv
 
 - **Token de sesión cifrado**: se guarda con AES-GCM y la clave vive en el Android Keystore, donde no se puede extraer (`TokenCipher`).
 - **HTTPS obligatorio en release**: `network_security_config` solo permite http en el build debug, para el backend local. El log de OkHttp no imprime headers ni cuerpos, para que el token no llegue a Logcat.
-- **Sin URL escrita en el código**: el build debug usa `payxApiBaseUrl` y el release usa `payxApiBaseUrlRelease` (debe ser https). Sin definirla, el release apunta a un dominio inexistente.
+- **Sin URL escrita en el código**: el build debug lee `payxApiBaseUrl` de `local.properties`, que no se versiona, y si falta usa `http://10.0.2.2:8080/`. El release lee `payxApiBaseUrlRelease`, que debe ser https. Sin definirla, el release apunta a un dominio inexistente.
 - **Lógica fuera de las Activities**: validadores, formatos, cálculos y repositorios se prueban en la JVM, sin dispositivo ni emulador.
 
 ## Cómo correrlo
@@ -50,7 +52,13 @@ Requisitos: Android Studio con el SDK 36 y el backend PayX corriendo.
 
 `installDebug` necesita un emulador o un teléfono conectado. En Windows usá `gradlew.bat`. También se puede abrir el proyecto en Android Studio y ejecutarlo desde ahí.
 
-El emulador ve la PC en `http://10.0.2.2:8080/`, que es el valor por defecto del build debug. El archivo `gradle.properties` trae una línea `payxApiBaseUrl` con la IP de la PC del autor. Cambiala por la IP de tu PC si usás un teléfono físico en la misma Wi-Fi, o borrala si usás el emulador. También se puede pasar `-PpayxApiBaseUrl=http://<ip>:8080/`.
+URL del backend. Con el emulador no hace falta configurar nada: el build debug usa `http://10.0.2.2:8080/`, que es la dirección de la PC vista desde el emulador. Con un teléfono físico en la misma Wi-Fi, agregá esta línea a `local.properties` (en la raíz del proyecto, no se sube a git):
+
+```
+payxApiBaseUrl=http://<IP de tu PC>:8080/
+```
+
+También se puede pasar por línea de comandos: `./gradlew installDebug -PpayxApiBaseUrl=http://<IP de tu PC>:8080/`. La URL debe terminar en `/`. Para el build release se usa `payxApiBaseUrlRelease`, de la misma forma, y tiene que ser https.
 
 La app no usa variables de entorno. El Client ID de Google (`google_web_client_id` en `strings.xml`) no es un secreto.
 
